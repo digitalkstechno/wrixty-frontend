@@ -35,11 +35,11 @@ export default function KanbanListPage() {
     <div className="space-y-6">
       {/* Header Panel */}
       <div className="space-y-1">
-        <h2 className="text-xl font-black uppercase tracking-wider text-zinc-900 dark:text-zinc-50">
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
           Kanban Board
         </h2>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider">
-          Quickly advance leads across stages visually via Drag & Drop
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium tracking-wide">
+          Quickly advance leads across stages visually via drag & drop
         </p>
       </div>
 
@@ -58,7 +58,7 @@ export default function KanbanListPage() {
               <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-2">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: stage.color }} />
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                  <h4 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                     {stage.name}
                   </h4>
                 </div>

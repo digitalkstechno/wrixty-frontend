@@ -119,10 +119,10 @@ export function Table<T extends Record<string, any>>({
   const isSomeSelected = selectedIds.length > 0 && selectedIds.length < filteredData.length;
 
   return (
-    <div className="w-full flex flex-col bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md overflow-hidden transition-all">
+    <div className="w-full flex flex-col bg-card-bg border border-border-ui rounded-2xl shadow-soft overflow-hidden transition-all">
       {/* Search Header */}
       {searchable && (
-        <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div className="p-4 border-b border-border-ui/50 flex flex-col sm:flex-row gap-3 items-center justify-between">
           <div className="relative w-full sm:max-w-xs">
             <input
               type="text"
@@ -132,10 +132,10 @@ export function Table<T extends Record<string, any>>({
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full px-3.5 py-1.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-md outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20"
+              className="w-full px-4 py-2 text-xs bg-background border border-border-ui text-text-primary rounded-xl outline-none focus:border-primary-teal focus:ring-1 focus:ring-primary-teal/20"
             />
           </div>
-          <div className="text-xs text-zinc-500">
+          <div className="text-xs text-text-secondary">
             Showing {paginatedData.length} of {filteredData.length} records
           </div>
         </div>
@@ -145,9 +145,9 @@ export function Table<T extends Record<string, any>>({
       <div className="w-full overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-zinc-50 dark:bg-zinc-900/60 border-b border-zinc-200 dark:border-zinc-800">
+            <tr className="bg-background/50 border-b border-border-ui">
               {selectable && (
-                <th className="p-3.5 w-12 text-center">
+                <th className="p-4 w-12 text-center">
                   <input
                     type="checkbox"
                     checked={isAllSelected}
@@ -155,16 +155,16 @@ export function Table<T extends Record<string, any>>({
                       if (el) el.indeterminate = isSomeSelected;
                     }}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 text-indigo-600 border-zinc-300 rounded focus:ring-indigo-500"
+                    className="w-4 h-4 text-primary-teal border-border-ui rounded focus:ring-primary-teal"
                   />
                 </th>
               )}
-              {columns.map((col) => (
+               {columns.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => col.sortable !== false && handleSort(col.key)}
-                  className={`p-3.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 select-none ${
-                    col.sortable !== false ? "cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200" : ""
+                  className={`p-4 text-xs font-semibold tracking-wide text-text-secondary select-none ${
+                    col.sortable !== false ? "cursor-pointer hover:text-text-primary" : ""
                   }`}
                 >
                   <div className="flex items-center gap-1.5">
@@ -177,7 +177,7 @@ export function Table<T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-850 relative">
+          <tbody className="divide-y divide-border-ui/50 relative">
             {isLoading ? (
               Array.from({ length: Math.min(rowsPerPage, 5) }).map((_, rowIndex) => (
                 <tr key={`skeleton-${rowIndex}`} className="animate-pulse bg-zinc-50/20 dark:bg-zinc-900/10">
@@ -200,26 +200,23 @@ export function Table<T extends Record<string, any>>({
                 return (
                   <tr
                     key={rowId}
-                    className={`hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-all ${
-                      isSelected ? "bg-indigo-50/10 dark:bg-indigo-950/5" : ""
+                    className={`group transition-colors ${
+                      isSelected ? "bg-primary-teal/5" : "hover:bg-background/80"
                     }`}
                   >
                     {selectable && (
-                      <td className="p-3.5 text-center">
+                      <td className="p-4 text-center">
                         <input
                           type="checkbox"
                           checked={isSelected}
                           onChange={(e) => handleSelectRow(rowId, e.target.checked)}
-                          className="w-4 h-4 text-indigo-600 border-zinc-300 rounded focus:ring-indigo-500"
+                          className="w-4 h-4 text-primary-teal border-border-ui rounded focus:ring-primary-teal"
                         />
                       </td>
                     )}
                     {columns.map((col) => (
-                      <td
-                        key={col.key}
-                        className="p-3.5 text-xs text-zinc-700 dark:text-zinc-300 font-medium"
-                      >
-                        {col.render ? col.render(row[col.key], row, rowIndex) : row[col.key]}
+                      <td key={`${rowId}-${col.key}`} className="p-4 text-xs text-text-primary">
+                        {col.render ? col.render(row[col.key], row, rowIndex) : String(row[col.key] ?? "")}
                       </td>
                     ))}
                   </tr>
@@ -227,10 +224,7 @@ export function Table<T extends Record<string, any>>({
               })
             ) : (
               <tr>
-                <td
-                  colSpan={columns.length + (selectable ? 1 : 0)}
-                  className="p-8 text-center text-xs text-zinc-400 dark:text-zinc-500 font-medium"
-                >
+                <td colSpan={columns.length + (selectable ? 1 : 0)} className="p-12 text-center text-text-secondary">
                   No records found
                 </td>
               </tr>
@@ -240,49 +234,45 @@ export function Table<T extends Record<string, any>>({
       </div>
 
       {/* Pagination Footer */}
-      {totalPages > 1 && (
-        <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-500">Rows per page:</span>
-            <select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-md py-1 px-2 focus:ring-1 focus:ring-indigo-500/20"
-            >
-              {[5, 10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div className="p-4 border-t border-border-ui/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="flex items-center gap-2 text-xs text-text-secondary">
+          <span>Rows per page:</span>
+          <select
+            value={rowsPerPage}
+            onChange={(e) => {
+              setRowsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="bg-transparent border-none focus:ring-0 cursor-pointer font-semibold text-text-primary"
+          >
+            {[5, 10, 20, 50].map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-zinc-500">
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-transparent rounded transition-all"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-transparent rounded transition-all"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-text-secondary">
+            Page <span className="font-semibold text-text-primary">{currentPage}</span> of {totalPages || 1}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded-lg hover:bg-background text-text-secondary disabled:opacity-30 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="p-1.5 rounded-lg hover:bg-background text-text-secondary disabled:opacity-30 transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

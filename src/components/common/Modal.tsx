@@ -38,15 +38,15 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/70 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/20 backdrop-blur-sm animate-fade-in">
       <div
-        className={`relative w-full ${sizeClass} bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-2xl flex flex-col max-h-[90vh] animate-modal-in overflow-hidden`}
+        className={`relative w-full ${sizeClass} bg-card-bg border border-border-ui rounded-2xl shadow-soft flex flex-col max-h-[90vh] animate-modal-in overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between p-4 border-b border-border-ui/50">
           {title ? (
-            <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-50">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-text-primary">
               {title}
             </h3>
           ) : (
@@ -55,18 +55,18 @@ export const Modal: React.FC<ModalProps> = ({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-850 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-1.5 hover:bg-background text-text-secondary hover:text-text-primary rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Close className="w-4 h-4" />
+            <Close className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="relative p-5 overflow-y-auto flex-1 text-left text-sm text-zinc-650 dark:text-zinc-350">
+        <div className="relative p-6 overflow-y-auto flex-1 text-left text-sm text-text-primary">
           {isLoading && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/60 dark:bg-zinc-950/60 backdrop-blur-[2px]">
-              <Loader size="lg" className="text-indigo-600 dark:text-indigo-500 mb-4" />
-              <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-500 animate-pulse">Processing...</p>
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card-bg/60 backdrop-blur-[2px]">
+              <Loader size="lg" className="text-primary-teal mb-4" />
+              <p className="text-xs font-bold uppercase tracking-widest text-primary-teal animate-pulse">Processing...</p>
             </div>
           )}
           <div className={isLoading ? "opacity-30 pointer-events-none transition-opacity" : "transition-opacity"}>

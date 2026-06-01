@@ -3,33 +3,55 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #09090b;
-  --primary: #4f46e5;
-  --secondary: #6366f1;
-  --border: #e4e4e7;
-  --card: #ffffff;
-  --muted: #71717a;
-  --muted-bg: #f4f4f5;
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --primary: #0F766E;
+  --secondary: #06B6D4;
+  --border: #E2E8F0;
+  --card: #FFFFFF;
+  --muted: #64748B;
+  --muted-bg: #F1F5F9;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --radius: 16px;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary-teal: #0F766E;
+  --color-secondary-cyan: #06B6D4;
+  --color-border-ui: var(--border);
+  --color-card-bg: var(--card);
+  --color-text-primary: var(--foreground);
+  --color-text-secondary: var(--muted);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  
+  --radius-xl: var(--radius);
+  
+  --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
 }
 
 .dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --primary: #6366f1;
-  --secondary: #4f46e5;
-  --border: #27272a;
-  --card: #18181b;
-  --muted: #a1a1aa;
-  --muted-bg: #18181b;
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --background: #0F172A;
+  --foreground: #F8FAFC;
+  --primary: #2DD4BF;
+  --secondary: #22D3EE;
+  --border: #1E293B;
+  --card: #1E293B;
+  --muted: #94A3B8;
+  --muted-bg: #1E293B;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-inter), sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
@@ -60,6 +82,17 @@ html {
 /* Hide horizontal scrollbar unless needed */
 .overflow-x-hidden {
   overflow-x: hidden;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 /* Glassmorphism utility */

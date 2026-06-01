@@ -25,10 +25,10 @@ export default function DashboardPage() {
 
   // Metrics list
   const metrics = [
-    { name: "Total Leads", value: totalLeads, icon: <PeopleAlt className="w-5 h-5 text-indigo-500" />, desc: "Active inquiries in CRM" },
-    { name: "Total Orders", value: totalOrders, icon: <ShoppingBag className="w-5 h-5 text-teal-500" />, desc: "Successfully converted orders" },
-    { name: "Total Returns", value: totalReturns, icon: <AssignmentReturn className="w-5 h-5 text-red-500" />, desc: "Returned/Rejected orders" },
-    { name: "Total Revenue", value: `₹${totalRevenue.toLocaleString("en-IN")}`, icon: <MonetizationOn className="w-5 h-5 text-amber-500" />, desc: "Delivered sales value" }
+    { name: "Total Leads", value: totalLeads, icon: <PeopleAlt className="w-5 h-5 text-primary-teal" />, desc: "Active inquiries in CRM" },
+    { name: "Total Orders", value: totalOrders, icon: <ShoppingBag className="w-5 h-5 text-secondary-cyan" />, desc: "Successfully converted orders" },
+    { name: "Total Returns", value: totalReturns, icon: <AssignmentReturn className="w-5 h-5 text-error" />, desc: "Returned/Rejected orders" },
+    { name: "Total Revenue", value: `₹${totalRevenue.toLocaleString("en-IN")}`, icon: <MonetizationOn className="w-5 h-5 text-warning" />, desc: "Delivered sales value" }
   ];
 
   // Best Selling Products data
@@ -112,18 +112,18 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Welcome Block */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card-bg p-8 border border-border-ui rounded-2xl shadow-soft">
         <div className="space-y-1">
-          <h2 className="text-xl font-black uppercase tracking-wider text-zinc-900 dark:text-zinc-50">
+          <h2 className="text-2xl font-black uppercase tracking-wider text-text-primary">
             Ayurvedic Dashboard
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider">
+          <p className="text-xs text-text-secondary font-semibold uppercase tracking-wider">
             Real-time analytics and staff metrics overview
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-3.5 py-1.5 rounded-md">
-          <TrendingUp className="w-4 h-4 text-indigo-500" />
-          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+        <div className="flex items-center gap-2 bg-primary-teal/5 border border-primary-teal/10 px-4 py-2 rounded-xl">
+          <TrendingUp className="w-4 h-4 text-primary-teal" />
+          <span className="text-xs font-bold text-primary-teal uppercase tracking-wider">
             Return Rate: {returnRate}%
           </span>
         </div>
@@ -134,20 +134,20 @@ export default function DashboardPage() {
         {metrics.map((metric, i) => (
           <div
             key={i}
-            className="p-5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-md shadow-sm flex items-center justify-between transition-all hover:border-zinc-300 dark:hover:border-zinc-800"
+            className="p-6 bg-card-bg border border-border-ui rounded-2xl shadow-soft flex items-center justify-between transition-all hover:border-primary-teal/20"
           >
-            <div className="space-y-1.5 text-left">
-              <span className="text-xs text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider">
+            <div className="space-y-2 text-left">
+              <span className="text-xs text-text-secondary font-bold uppercase tracking-wider">
                 {metric.name}
               </span>
-              <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
+              <h3 className="text-3xl font-black text-text-primary tracking-tight">
                 {metric.value}
               </h3>
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-600 font-medium">
+              <p className="text-[10px] text-text-secondary font-medium">
                 {metric.desc}
               </p>
             </div>
-            <div className="p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md">
+            <div className="p-4 bg-background border border-border-ui/50 rounded-xl">
               {metric.icon}
             </div>
           </div>
@@ -158,18 +158,22 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Side: Staff Stats */}
         <div className="lg:col-span-2 space-y-4">
-          <h4 className="text-xs font-black uppercase tracking-wider text-zinc-500">
+          <h4 className="text-xs font-black uppercase tracking-wider text-text-secondary px-2">
             👥 Staff Performance Matrix
           </h4>
-          <Table data={staffStats} columns={staffColumns} searchable={false} />
+          <div className="bg-card-bg p-6 border border-border-ui rounded-2xl shadow-soft">
+            <Table data={staffStats} columns={staffColumns} searchable={false} />
+          </div>
         </div>
 
         {/* Right Side: Best Selling Products */}
         <div className="space-y-4">
-          <h4 className="text-xs font-black uppercase tracking-wider text-zinc-500">
+          <h4 className="text-xs font-black uppercase tracking-wider text-text-secondary px-2">
             📦 Best Selling Products
           </h4>
-          <Table data={bestSellers} columns={productColumns} searchable={false} />
+          <div className="bg-card-bg p-6 border border-border-ui rounded-2xl shadow-soft">
+            <Table data={bestSellers} columns={productColumns} searchable={false} />
+          </div>
         </div>
       </div>
     </div>

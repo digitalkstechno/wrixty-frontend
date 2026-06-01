@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useMockDb, User } from "../../context/MockDbContext";
 import { Table, Column } from "../../components/common/Table";
-import { Delete, Add, Edit, SyncAlt } from "@mui/icons-material";
+import { FiEdit, FiTrash2, FiUserCheck } from "react-icons/fi";
 import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Select } from "../../components/common/Select";
@@ -104,27 +104,27 @@ export default function UsersPage() {
       header: "Action",
       sortable: false,
       render: (_, row) => (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => openEdit(row)}
-            className="p-1.5 bg-green-600 hover:bg-green-500 text-white rounded transition-all shadow-sm"
+            className="p-2 text-text-secondary hover:text-primary-teal hover:bg-primary-teal/5 rounded-xl transition-all inline-flex items-center justify-center"
             title="Edit User"
           >
-            <Edit className="w-3.5 h-3.5" />
+            <FiEdit className="w-4.5 h-4.5" />
           </button>
           <button
             onClick={() => handleLoginAs(row)}
-            className="p-1.5 bg-teal-800 hover:bg-teal-700 text-white rounded transition-all shadow-sm"
+            className="p-2 text-text-secondary hover:text-secondary-cyan hover:bg-secondary-cyan/5 rounded-xl transition-all inline-flex items-center justify-center"
             title="Login As This User"
           >
-            <SyncAlt className="w-3.5 h-3.5" />
+            <FiUserCheck className="w-4.5 h-4.5" />
           </button>
           <button
             onClick={() => deleteUser(row.id)}
-            className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-red-500 hover:text-red-600 rounded transition-all ml-2"
+            className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-xl transition-all inline-flex items-center justify-center"
             title="Delete User"
           >
-            <Delete className="w-3.5 h-3.5" />
+            <FiTrash2 className="w-4.5 h-4.5" />
           </button>
         </div>
       )
@@ -132,29 +132,32 @@ export default function UsersPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card-bg p-8 border border-border-ui rounded-2xl shadow-soft">
         <div className="space-y-1">
-          <h2 className="text-xl font-black uppercase tracking-wider text-zinc-900 dark:text-zinc-50">
+          <h2 className="text-2xl font-black uppercase tracking-wider text-text-primary">
             Users & Staff
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider">
+          <p className="text-xs text-text-secondary font-semibold uppercase tracking-wider">
             Manage call agents, managers, and bank details
           </p>
         </div>
-        <button
+        <Button
           onClick={() => {
             clear();
             setModalOpen(true);
           }}
-          className="flex items-center gap-1 py-1.5 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-md shadow-sm transition-all"
+          variant="primary"
+          className="rounded-xl px-6"
         >
-          <Add className="w-4 h-4" /> Add User
-        </button>
+          Add User
+        </Button>
       </div>
 
-      <Table data={users} columns={columns} />
+      <div className="bg-card-bg p-8 border border-border-ui rounded-2xl shadow-soft">
+        <Table data={users} columns={columns} />
+      </div>
 
       {/* Add User Modal */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Add User" sizeClass="max-w-4xl">

@@ -8,7 +8,8 @@ import { Select } from "../../components/common/Select";
 import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
-import { Delete, Edit, Replay, Close } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
+import { FiEdit, FiTrash2, FiRefreshCcw } from "react-icons/fi";
 
 interface SelectedProductRow {
   id: string;
@@ -203,27 +204,27 @@ export default function OrderListPage() {
       header: "Action",
       sortable: false,
       render: (_, row) => (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => openEdit(row)}
-            className="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-650 dark:text-indigo-400 rounded border border-indigo-500/20 transition-all inline-flex items-center justify-center shadow-sm"
+            className="p-2 text-text-secondary hover:text-primary-teal hover:bg-primary-teal/5 rounded-xl transition-all inline-flex items-center justify-center"
             title="Edit Order"
           >
-            <Edit className="w-3.5 h-3.5" />
+            <FiEdit className="w-4.5 h-4.5" />
           </button>
           <button
             onClick={() => handleDelete(row.id)}
-            className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded border border-rose-500/20 transition-all inline-flex items-center justify-center shadow-sm"
+            className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-xl transition-all inline-flex items-center justify-center"
             title="Delete Order"
           >
-            <Delete className="w-3.5 h-3.5" />
+            <FiTrash2 className="w-4.5 h-4.5" />
           </button>
           <button
             onClick={() => openRepeat(row)}
-            className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded border border-emerald-500/20 transition-all inline-flex items-center justify-center shadow-sm"
+            className="p-2 text-text-secondary hover:text-success hover:bg-success/5 rounded-xl transition-all inline-flex items-center justify-center"
             title="Repeat Order"
           >
-            <Replay className="w-3.5 h-3.5" />
+            <FiRefreshCcw className="w-4.5 h-4.5" />
           </button>
         </div>
       )
@@ -235,7 +236,7 @@ export default function OrderListPage() {
     <div className="space-y-6 text-left">
       {/* Payment Type */}
       <div className="space-y-2">
-        <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+        <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
           Payment Type
         </label>
         <div className="flex items-center gap-6">
@@ -372,22 +373,22 @@ export default function OrderListPage() {
     <div className="space-y-6">
       
       {/* Order List Main White Card matching screenshot */}
-      <div className="bg-white dark:bg-zinc-950 p-6 border border-zinc-200 dark:border-zinc-900 rounded-md shadow-sm space-y-6">
+      <div className="bg-card-bg p-8 border border-border-ui rounded-2xl shadow-soft space-y-6">
         
         {/* Card Header title and Date Range */}
-        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-4">
-          <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">
+        <div className="flex items-center justify-between border-b border-border-ui/50 pb-6">
+          <h2 className="text-2xl font-bold text-text-primary">
             Order List
           </h2>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-900 px-3 py-1.5 rounded border border-zinc-200/50 dark:border-zinc-800">
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-xl border border-border-ui/50">
               📅 May 30, 2026 - May 30, 2026
             </span>
           </div>
         </div>
 
         {/* Inline Filters & Action Buttons exactly matching screenshot layout */}
-        <div className="flex flex-wrap items-center gap-3 border-b border-zinc-100 dark:border-zinc-900 pb-4">
+        <div className="flex flex-wrap items-center gap-3 border-b border-border-ui/50 pb-6">
           <div className="w-full sm:w-auto sm:flex-1 min-w-[160px]">
             <Select
               value={filterProduct}
@@ -403,7 +404,7 @@ export default function OrderListPage() {
               value={filterAssignee}
               onChange={(e) => setFilterAssignee(e.target.value)}
               options={[
-                { value: "all", label: "Select Assgin" },
+                { value: "all", label: "Select Assign" },
                 ...users.map(u => ({ value: u.name, label: u.name }))
               ]}
             />
@@ -419,40 +420,35 @@ export default function OrderListPage() {
             />
           </div>
           
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="primary"
-              onClick={() => toast.info("Filters applied.")}
+              className="rounded-xl px-6"
             >
               Apply Filter
             </Button>
             <Button
               variant="outline"
+              className="rounded-xl px-6"
               onClick={() => {
                 setFilterProduct("all");
                 setFilterAssignee("all");
                 setFilterCourier("all");
-                toast.info("Filters cleared.");
               }}
             >
               Clear Filter
             </Button>
             <Button
               variant="outline"
-              onClick={() => toast.success("Order data successfully exported to Excel!")}
+              className="rounded-xl px-6"
             >
               Export
             </Button>
           </div>
         </div>
 
-        {/* Table Element */}
-        <Table
-          data={filteredOrders}
-          columns={columns}
-          selectable={false}
-          isLoading={isFetchingData}
-        />
+        {/* Table database */}
+        <Table data={filteredOrders} columns={columns} selectable isLoading={isFetchingData} />
       </div>
 
       {/* Edit Order Modal */}

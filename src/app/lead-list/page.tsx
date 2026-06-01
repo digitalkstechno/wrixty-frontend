@@ -9,7 +9,8 @@ import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Select } from "../../components/common/Select";
 import { Button } from "../../components/common/Button";
-import { Add, SwapHoriz, Delete, Edit, Assignment, Note } from "@mui/icons-material";
+import { Add, SwapHoriz, Assignment } from "@mui/icons-material";
+import { FiEdit, FiTrash2, FiFileText } from "react-icons/fi";
 
 interface SelectedProductRow {
   id: string;
@@ -165,29 +166,39 @@ export default function LeadListPage() {
     {
       key: "status",
       header: "Status",
-      render: (val) => {
-        let badgeClass = "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"; // Open / New
-        if (val === "Inprogress" || val === "In-Progress") {
-          badgeClass = "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20";
-        }
-        if (val === "Close" || val === "Closed") {
-          badgeClass = "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20";
-        }
-        
+      render: (val, row) => {
         return (
-          <span className={`inline-block whitespace-nowrap px-2.5 py-1 text-[11px] font-bold rounded-md text-center ${badgeClass}`}>
-            {val}
-          </span>
+          <select
+            value={val}
+            onChange={(e) => updateLead(row.id, { status: e.target.value })}
+            className={`text-[11px] font-bold rounded-lg px-2 py-1 outline-none border cursor-pointer appearance-none transition-all ${
+              val === "Inprogress" || val === "In-Progress"
+                ? "bg-success/10 text-success border-success/20"
+                : val === "Close" || val === "Closed"
+                ? "bg-error/10 text-error border-error/20"
+                : "bg-warning/10 text-warning border-warning/20"
+            }`}
+          >
+            {statuses.map(s => (
+              <option key={s.id} value={s.name}>{s.name}</option>
+            ))}
+          </select>
         );
       }
     },
     {
       key: "reason_call",
       header: "Reason Call",
-      render: (val) => (
-        <span className="px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 rounded font-semibold text-xs">
-          {val || "CNR"}
-        </span>
+      render: (val, row) => (
+        <select
+          value={val || "CNR"}
+          onChange={(e) => updateLead(row.id, { reason_call: e.target.value })}
+          className="px-2.5 py-1.5 bg-background text-text-secondary rounded-lg font-semibold text-xs border border-border-ui/50 outline-none cursor-pointer appearance-none hover:border-primary-teal transition-all"
+        >
+          {["CNR", "Wrong Number", "Switch Off", "Disconnected", "Call Busy", "Number off", " vichari ne kese"].map(r => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
       )
     },
     {
@@ -199,7 +210,7 @@ export default function LeadListPage() {
           onClick={() => openConvertModal(row)}
           variant="primary"
           size="sm"
-          className="text-[11px]"
+          className="text-[11px] whitespace-nowrap px-4"
         >
           Convert To Order
         </Button>
@@ -212,10 +223,10 @@ export default function LeadListPage() {
       render: (_, row) => (
         <button
           onClick={() => openNoteModal(row)}
-          className="p-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded transition-all border border-amber-500/20 shadow-sm inline-flex items-center justify-center"
+          className="p-2 text-text-secondary hover:text-primary-teal hover:bg-primary-teal/5 rounded-xl transition-all inline-flex items-center justify-center"
           title={row.note || "No note"}
         >
-          <Note className="w-4 h-4" />
+          <FiFileText className="w-5 h-5" />
         </button>
       )
     },
@@ -224,20 +235,20 @@ export default function LeadListPage() {
       header: "Action",
       sortable: false,
       render: (_, row) => (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => openEditModal(row)}
-            className="p-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-650 dark:text-indigo-400 rounded border border-indigo-500/20 transition-all inline-flex items-center justify-center"
+            className="p-2 text-text-secondary hover:text-primary-teal hover:bg-primary-teal/5 rounded-xl transition-all inline-flex items-center justify-center"
             title="Edit Lead"
           >
-            <Edit className="w-3.5 h-3.5" />
+            <FiEdit className="w-4.5 h-4.5" />
           </button>
           <button
             onClick={() => deleteLead(row.id)}
-            className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded border border-rose-500/20 transition-all inline-flex items-center justify-center"
+            className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-xl transition-all inline-flex items-center justify-center"
             title="Delete Lead"
           >
-            <Delete className="w-3.5 h-3.5" />
+            <FiTrash2 className="w-4.5 h-4.5" />
           </button>
         </div>
       )
@@ -248,20 +259,21 @@ export default function LeadListPage() {
     <div className="space-y-6">
       
       {/* Lead List Main White Card matching screenshots */}
-      <div className="bg-white dark:bg-zinc-950 p-6 border border-zinc-200 dark:border-zinc-900 rounded-md shadow-sm space-y-6">
+      <div className="bg-card-bg p-8 border border-border-ui rounded-2xl shadow-soft space-y-6">
         
         {/* Card Header title and Add button */}
-        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-4">
-          <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">
+        <div className="flex items-center justify-between border-b border-border-ui/50 pb-6">
+          <h2 className="text-2xl font-bold text-text-primary">
             Lead List
           </h2>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-900 px-3 py-1.5 rounded border border-zinc-200/50 dark:border-zinc-800">
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-xl border border-border-ui/50">
               📅 May 30, 2026 - May 30, 2026
             </span>
             <Button
               onClick={() => router.push("/add-lead")}
               variant="primary"
+              className="rounded-xl px-6"
             >
               Add Lead
             </Button>
@@ -269,7 +281,7 @@ export default function LeadListPage() {
         </div>
 
         {/* Inline Filters & Action Buttons exactly matching first screenshot layout */}
-        <div className="flex flex-wrap items-center gap-3 border-b border-zinc-100 dark:border-zinc-900 pb-4">
+        <div className="flex flex-wrap items-center gap-3 border-b border-border-ui/50 pb-6">
           <div className="w-full sm:w-auto sm:flex-1 min-w-[160px]">
             <Select
               value={filterProduct}
@@ -307,89 +319,81 @@ export default function LeadListPage() {
               options={[
                 { value: "all", label: "Select Reason Call" },
                 { value: "CNR", label: "CNR" },
-                { value: "Call Busy", label: "Call Busy" },
-                { value: "Number off", label: "Number off" },
-                { value: " vichari ne kese", label: " vichari ne kese" }
+                { value: "Wrong Number", label: "Wrong Number" },
+                { value: "Switch Off", label: "Switch Off" },
+                { value: "Disconnected", label: "Disconnected" }
               ]}
             />
           </div>
           
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="primary"
-              onClick={() => toast.info("Filter parameters applied successfully.")}
+              className="rounded-xl"
             >
               Apply Filter
             </Button>
             <Button
               variant="outline"
+              className="rounded-xl"
               onClick={() => {
                 setFilterProduct("all");
                 setFilterAssignee("all");
                 setFilterStatus("all");
                 setFilterReason("all");
-                toast.info("Filters cleared.");
               }}
             >
               Clear Filter
             </Button>
             <Button
-              variant="secondary"
-              onClick={() => toast.info("Assigned lead workflow initiated.")}
+              variant="primary"
+              className="rounded-xl"
             >
               Assign Lead
             </Button>
             <Button
               variant="outline"
-              onClick={() => toast.success("Lead data successfully exported to Excel!")}
+              className="rounded-xl"
             >
               Export
             </Button>
           </div>
         </div>
 
-        {/* Selected ids bulk deletes */}
+        {/* Bulk Action Panel - only visible when items selected */}
         {selectedIds.length > 0 && (
-          <div className="flex justify-end">
-            <Button
-              variant="danger"
-              onClick={handleBulkDelete}
-              isLoading={isDeletingLead}
-            >
-              Bulk Delete ({selectedIds.length})
-            </Button>
+          <div className="flex items-center justify-between p-4 bg-primary-teal/5 border border-primary-teal/20 rounded-xl animate-fade-in">
+            <span className="text-sm font-bold text-primary-teal">
+              {selectedIds.length} leads selected
+            </span>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-card-bg border-primary-teal/20 text-primary-teal rounded-xl"
+              >
+                <SwapHoriz className="w-4 h-4 mr-2" /> Bulk Assign
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                className="rounded-xl"
+                onClick={handleBulkDelete}
+                isLoading={isDeletingLead}
+              >
+                <FiTrash2 className="w-4 h-4 mr-2" /> Bulk Delete
+              </Button>
+            </div>
           </div>
         )}
 
-        {/* Entries & Search row */}
-        <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-900 pt-4 mt-2">
-          <div className="text-xs text-zinc-500 flex items-center gap-1.5 font-medium">
-            Show
-            <select className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded py-1 px-1 text-xs">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-            </select>
-            entries
-          </div>
-          <div className="text-xs text-zinc-500 flex items-center gap-1.5 font-medium">
-            Search:
-            <input
-              type="text"
-              placeholder=""
-              className="bg-zinc-55 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded py-1 px-2 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Table database */}
+        {/* Table Element */}
         <Table
           data={filteredLeads}
           columns={columns}
-          selectable
+          selectable={true}
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
-          searchable={false}
           isLoading={isFetchingData}
         />
       </div>

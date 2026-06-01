@@ -129,10 +129,10 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
         key={path}
         href={path}
         onClick={() => setSidebarOpen(false)}
-        className={`flex items-center gap-3.5 px-4 py-2.5 rounded-md text-[13px] font-medium capitalize tracking-wide transition-all duration-205 ${
+        className={`flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-[13px] font-medium capitalize tracking-wide transition-all duration-205 ${
           active
-            ? "bg-indigo-600 text-white shadow-sm font-semibold"
-            : "text-zinc-650 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100"
+            ? "bg-primary-teal text-white shadow-soft font-semibold"
+            : "text-text-secondary hover:bg-background hover:text-text-primary"
         }`}
       >
         {icon}
@@ -148,10 +148,10 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
         key={path}
         href={path}
         onClick={() => setSidebarOpen(false)}
-        className={`flex items-center px-4 py-1.5 rounded text-[13px] font-semibold transition-all duration-200 ${
+        className={`flex items-center px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all duration-200 ${
           active
-            ? "text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-500/5"
-            : "text-zinc-550 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-150"
+            ? "text-primary-teal font-bold bg-primary-teal/5"
+            : "text-text-secondary hover:text-text-primary"
         }`}
       >
         <span>{name}</span>
@@ -162,21 +162,18 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastProvider>
       <MockDbProvider>
-        <div className="h-screen w-screen flex overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans transition-all duration-300">
+        <div className="h-screen w-screen flex overflow-hidden bg-background text-text-primary font-sans transition-all duration-300">
           
           {/* Desktop Sidebar (Fixed & Independent Scrolling area) */}
-          <aside className="hidden lg:flex flex-col w-64 border-r border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 shrink-0 h-full overflow-hidden">
-            <div className="h-16 flex items-center justify-between px-6 border-b border-zinc-200 dark:border-zinc-900 shrink-0">
-              <span className="font-extrabold text-lg tracking-wider text-zinc-800 dark:text-zinc-100 font-sans">
+          <aside className="hidden lg:flex flex-col w-64 border-r border-border-ui bg-card-bg shrink-0 h-full overflow-hidden">
+            <div className="h-16 flex items-center px-6 border-b border-border-ui shrink-0">
+              <span className="font-extrabold text-lg tracking-wider text-primary-teal font-sans">
                 Wrixty
               </span>
-              <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
-                <Apps className="w-4 h-4" />
-              </div>
             </div>
             
             {/* Sidebar navigation list: matches screenshot exactly */}
-            <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 scrollbar-thin">
+            <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 no-scrollbar">
               {renderLink("Dashboards", "/dashboard", <DashboardIcon className="w-4.5 h-4.5" />)}
               {renderLink("Lead", "/lead-list", <People className="w-4.5 h-4.5" />)}
               {renderLink("Restor Lead", "/restore-data", <RestoreFromTrash className="w-4.5 h-4.5" />)}
@@ -193,7 +190,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
               <div className="space-y-1 text-left">
                 <button
                   onClick={() => setTeamOpen(!teamOpen)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-md text-[13px] font-medium capitalize tracking-wide text-zinc-650 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all duration-200"
+                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
                 >
                   <div className="flex items-center gap-3.5">
                     <Groups className="w-4.5 h-4.5" />
@@ -202,7 +199,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                   {teamOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
                 </button>
                 {teamOpen && (
-                  <div className="border-l-2 border-teal-700/80 dark:border-indigo-600/80 ml-6 pl-4 space-y-1 animate-fade-in text-left">
+                  <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
                     {renderSubLink("User", "/users")}
                     {renderSubLink("Role", "/roles-list")}
                     {renderSubLink("Team", "/team-list")}
@@ -214,7 +211,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
               <div className="space-y-1 text-left">
                 <button
                   onClick={() => setMasterOpen(!masterOpen)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-md text-[13px] font-medium capitalize tracking-wide text-zinc-650 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all duration-200"
+                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
                 >
                   <div className="flex items-center gap-3.5">
                     <Security className="w-4.5 h-4.5" />
@@ -223,7 +220,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                   {masterOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
                 </button>
                 {masterOpen && (
-                  <div className="border-l-2 border-teal-700/80 dark:border-indigo-600/80 ml-6 pl-4 space-y-1 animate-fade-in text-left">
+                  <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
                     {renderSubLink("Status", "/status")}
                     {renderSubLink("Product", "/product")}
                     {renderSubLink("Return Order Type", "/return-order-type")}
@@ -232,10 +229,10 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
               </div>
             </nav>
             
-            <div className="p-4 border-t border-zinc-200 dark:border-zinc-900 shrink-0">
+            <div className="p-4 border-t border-border-ui shrink-0">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-xs font-bold uppercase tracking-wider text-red-500 hover:bg-red-50/10 transition-all border border-red-500/20"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider text-error hover:bg-error/5 transition-all border border-error/20"
               >
                 <Logout className="w-4 h-4" />
                 Sign Out
@@ -246,16 +243,16 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
           {/* Mobile Sidebar Panel */}
           {sidebarOpen && (
             <div className="fixed inset-0 z-50 lg:hidden flex h-full">
-              <div className="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>
-              <aside className="relative flex flex-col w-64 max-w-xs bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-900 animate-slide-in h-full overflow-hidden">
-                <div className="h-16 flex items-center justify-between px-6 border-b border-zinc-200 dark:border-zinc-900 shrink-0">
-                  <span className="font-extrabold text-lg text-zinc-800 dark:text-zinc-100">Wrixty</span>
-                  <button onClick={() => setSidebarOpen(false)} className="text-zinc-400 hover:text-zinc-100">
+              <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>
+              <aside className="relative flex flex-col w-64 max-w-xs bg-card-bg border-r border-border-ui animate-slide-in h-full overflow-hidden">
+                <div className="h-16 flex items-center px-6 border-b border-border-ui shrink-0">
+                  <span className="font-extrabold text-lg text-primary-teal">Wrixty</span>
+                  <button onClick={() => setSidebarOpen(false)} className="ml-auto text-text-secondary hover:text-text-primary">
                     <Close className="w-5 h-5" />
                   </button>
                 </div>
                 
-                <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 scrollbar-thin">
+                <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 no-scrollbar">
                   {renderLink("Dashboards", "/dashboard", <DashboardIcon className="w-4.5 h-4.5" />)}
                   {renderLink("Lead", "/lead-list", <People className="w-4.5 h-4.5" />)}
                   {renderLink("Restor Lead", "/restore-data", <RestoreFromTrash className="w-4.5 h-4.5" />)}
@@ -272,7 +269,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                   <div className="space-y-1 text-left">
                     <button
                       onClick={() => setTeamOpen(!teamOpen)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-md text-[13px] font-medium capitalize tracking-wide text-zinc-650 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all duration-200"
+                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
                     >
                       <div className="flex items-center gap-3.5">
                         <Groups className="w-4.5 h-4.5" />
@@ -281,7 +278,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                       {teamOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
                     </button>
                     {teamOpen && (
-                      <div className="border-l-2 border-teal-700/80 dark:border-indigo-600/80 ml-6 pl-4 space-y-1 animate-fade-in text-left">
+                      <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
                         {renderSubLink("User", "/users")}
                         {renderSubLink("Role", "/roles-list")}
                         {renderSubLink("Team", "/team-list")}
@@ -293,7 +290,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                   <div className="space-y-1 text-left">
                     <button
                       onClick={() => setMasterOpen(!masterOpen)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-md text-[13px] font-medium capitalize tracking-wide text-zinc-650 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all duration-200"
+                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
                     >
                       <div className="flex items-center gap-3.5">
                         <Security className="w-4.5 h-4.5" />
@@ -302,7 +299,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                       {masterOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
                     </button>
                     {masterOpen && (
-                      <div className="border-l-2 border-teal-700/80 dark:border-indigo-600/80 ml-6 pl-4 space-y-1 animate-fade-in text-left">
+                      <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
                         {renderSubLink("Status", "/status")}
                         {renderSubLink("Product", "/product")}
                         {renderSubLink("Return Order Type", "/return-order-type")}
@@ -311,10 +308,10 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                   </div>
                 </nav>
                 
-                <div className="p-4 border-t border-zinc-200 dark:border-zinc-900 shrink-0">
+                <div className="p-4 border-t border-border-ui shrink-0">
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md text-xs font-bold uppercase tracking-wider text-red-500 hover:bg-red-50/10 transition-all border border-red-500/20"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider text-error hover:bg-error/5 transition-all border border-error/20"
                   >
                     <Logout className="w-4 h-4" />
                     Sign Out
@@ -326,45 +323,49 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
 
           {/* Right-side Main Content View (Sticky Header + Independent Scroll content) */}
           <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-            {/* Global Sticky Header */}
-            <header className="h-16 flex items-center justify-between px-6 border-b border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 shrink-0 transition-all">
+            {/* Global Sticky Header with Glassmorphism, Premium Alignment, and Motion */}
+            <header className="h-16 flex items-center justify-between px-6 border-b border-border-ui/50 bg-card-bg/70 backdrop-blur-md sticky top-0 z-40 shrink-0 transition-all duration-300">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-150 transition-all"
+                className="lg:hidden text-text-secondary hover:text-text-primary transition-all active:scale-95 duration-150"
               >
                 <Menu className="w-6 h-6" />
               </button>
 
-              <div className="hidden sm:flex items-center gap-2">
-                <span className="text-xs font-bold uppercase text-indigo-600 tracking-wider">Super Admin Console</span>
-                <span className="text-zinc-300 dark:text-zinc-800">|</span>
-                <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide uppercase">Wrixty Ayurveda CRM</span>
+              <div className="hidden sm:flex items-center gap-3">
+                <span className="text-xs font-medium text-primary-teal bg-primary-teal/5 px-3 py-1 rounded-full border border-primary-teal/10 shadow-soft transition-all duration-300 hover:-translate-y-0.5 cursor-pointer">
+                  Super Admin Console
+                </span>
+                <span className="text-border-ui">/</span>
+                <span className="text-xs font-medium text-text-secondary transition-all hover:text-text-primary cursor-pointer">
+                  Wrixty Ayurveda CRM
+                </span>
               </div>
 
               {/* Exact Right Header User Info display matching screenshot */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-5">
                 <button
                   onClick={toggleTheme}
-                  className="p-2 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-all"
+                  className="p-2 text-text-secondary hover:bg-background rounded-xl transition-all duration-200 active:scale-90 hover:text-primary-teal"
                   title="Toggle Theme"
                 >
                   {darkMode ? <LightMode className="w-5 h-5" /> : <DarkMode className="w-5 h-5" />}
                 </button>
 
-                <div className="flex items-center gap-2.5 p-1">
-                  <div className="w-8 h-8 rounded bg-amber-600/10 text-amber-700 font-black text-xs flex items-center justify-center uppercase shadow-sm border border-amber-600/20">
+                <div className="flex items-center gap-3 p-1 group cursor-pointer">
+                  <div className="w-9 h-9 rounded-xl bg-primary-teal text-white font-bold text-xs flex items-center justify-center shadow-soft transition-all duration-300 group-hover:scale-105 group-hover:rotate-3">
                     {currentUser?.avatar || "A"}
                   </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{currentUser?.name || "Admin"}</span>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold tracking-wide">{currentUser?.email || "superadmin@gmail.com"}</span>
+                  <div className="flex flex-col text-left transition-all duration-200 group-hover:translate-x-0.5">
+                    <span className="text-xs font-bold text-text-primary">{currentUser?.name || "Admin"}</span>
+                    <span className="text-[10px] text-text-secondary font-semibold tracking-wide">{currentUser?.email || "superadmin@gmail.com"}</span>
                   </div>
                 </div>
               </div>
             </header>
 
             {/* Scrollable Page body: Scrolls independently of Sidebar */}
-            <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 bg-zinc-50 dark:bg-zinc-900/30">
+            <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 bg-background">
               {children}
             </main>
           </div>

@@ -42,32 +42,32 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
       {/* Background gradients */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl pointer-events-none"></div>
+      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-primary-teal/5 blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-secondary-cyan/5 blur-3xl pointer-events-none"></div>
 
       <div className="w-full max-w-md relative z-10">
-        <div className="bg-white border border-zinc-200 p-8 rounded-md shadow-lg text-center space-y-6">
-          <div className="space-y-2">
-            <div className="w-12 h-12 mx-auto rounded-md bg-indigo-600 flex items-center justify-center font-black text-white text-lg shadow-md tracking-wider">
+        <div className="bg-card-bg border border-border-ui p-10 rounded-2xl shadow-soft text-center space-y-8">
+          <div className="space-y-3">
+            <div className="w-14 h-14 mx-auto rounded-xl bg-primary-teal flex items-center justify-center font-black text-white text-xl shadow-soft tracking-wider">
               WA
             </div>
-            <h1 className="text-xl font-black tracking-widest text-zinc-800 uppercase">
+            <h1 className="text-2xl font-black tracking-widest text-text-primary uppercase">
               Wrixty Ayurveda
             </h1>
-            <p className="text-xs text-zinc-500 font-semibold tracking-wider uppercase">
+            <p className="text-xs text-text-secondary font-semibold tracking-wider uppercase">
               Sign In to Your Account
             </p>
           </div>
 
           {error && (
-            <div className="p-3 text-xs bg-red-500/10 border border-red-500/20 text-red-400 rounded-md text-left font-medium">
+            <div className="p-3 text-xs bg-error/10 border border-error/20 text-error rounded-xl text-left font-medium">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <Input
               label="Email Address"
               type="email"
@@ -75,7 +75,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500"
+              className="bg-card-bg border-border-ui text-text-primary placeholder:text-text-secondary/50 focus:border-primary-teal"
             />
 
             <Input
@@ -85,7 +85,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500"
+              className="bg-card-bg border-border-ui text-text-primary placeholder:text-text-secondary/50 focus:border-primary-teal"
             />
 
             <Button
@@ -93,18 +93,20 @@ export default function LoginPage() {
               variant="primary"
               fullWidth
               isLoading={loading}
+              className="py-3"
             >
               Sign In
             </Button>
           </form>
 
-          {/* Quick Demo Autofill */}
-          <div className="pt-4 border-t border-zinc-200">
+          <div className="pt-4 border-t border-border-ui/50">
             <button
               onClick={autofillAdmin}
-              className="text-[11px] text-zinc-500 hover:text-indigo-600 font-bold tracking-wider uppercase transition-colors"
+              className="text-[10px] font-bold uppercase tracking-widest text-text-secondary hover:text-primary-teal transition-all flex items-center justify-center gap-2 mx-auto"
             >
-              ⚡ Click to Auto-fill Demo Credentials
+              <span className="w-4 h-[1px] bg-border-ui"></span>
+              Click to auto-fill demo credentials
+              <span className="w-4 h-[1px] bg-border-ui"></span>
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import { Loader } from "./Loader";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -19,7 +19,8 @@ export const Input: React.FC<InputProps> = ({
   disabled,
   ...props
 }) => {
-  const inputId = id || `input-${Math.random().toString(36).substring(2, 9)}`;
+  const generatedId = useId();
+  const inputId = id || generatedId;
   const isDisabled = disabled || isLoading;
 
   return (
@@ -37,14 +38,14 @@ export const Input: React.FC<InputProps> = ({
           id={inputId}
           type={type}
           className={`
-            w-full px-3.5 py-2 text-sm bg-[var(--background)]
-            border border-[var(--border)]
-            text-[var(--foreground)]
-            rounded-md transition-all duration-200 outline-none
-            focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30
-            placeholder:text-zinc-400 dark:placeholder:text-zinc-600
-            disabled:bg-zinc-50 disabled:dark:bg-zinc-900 disabled:text-zinc-500
-            ${error ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}
+            w-full px-4 py-2.5 text-sm bg-card-bg
+            border border-border-ui
+            text-text-primary
+            rounded-2xl transition-all duration-200 outline-none
+            focus:border-primary-teal focus:ring-1 focus:ring-primary-teal/30
+            placeholder:text-text-secondary/50
+            disabled:bg-background disabled:text-text-secondary
+            ${error ? "border-error focus:border-error focus:ring-error/20" : ""}
             ${isLoading ? "pr-10" : ""}
             ${className}
           `}
@@ -52,13 +53,13 @@ export const Input: React.FC<InputProps> = ({
           {...props}
         />
         {isLoading && (
-          <div className="absolute right-3 text-indigo-500">
+          <div className="absolute right-3 text-primary-teal">
             <Loader size="sm" />
           </div>
         )}
       </div>
       {error && (
-        <span className="text-xs font-medium text-red-500">{error}</span>
+        <span className="text-xs font-medium text-error">{error}</span>
       )}
       {!error && helperText && (
         <span className="text-xs text-[var(--muted)]">{helperText}</span>
