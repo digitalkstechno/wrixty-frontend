@@ -20,6 +20,13 @@ export interface EndPointApi {
   returnOrderTypeDelete: string;
   returnOrderTypeExport: string;
 
+  // Reason to Calls
+  reasonToCalls: string;
+  reasonToCallCreate: string;
+  reasonToCallUpdate: string;
+  reasonToCallDelete: string;
+  reasonToCallExport: string;
+
   // Users
   users: string;
   userCreate: string;
@@ -46,6 +53,13 @@ const endPointApi: EndPointApi = {
   returnOrderTypeUpdate: 'return-order-types',
   returnOrderTypeDelete: 'return-order-types',
   returnOrderTypeExport: 'return-order-types/export',
+
+  // Reason to Calls
+  reasonToCalls: 'reason-to-calls',
+  reasonToCallCreate: 'reason-to-calls',
+  reasonToCallUpdate: 'reason-to-calls',
+  reasonToCallDelete: 'reason-to-calls',
+  reasonToCallExport: 'reason-to-calls/export',
 
   // Users
   users: 'users',

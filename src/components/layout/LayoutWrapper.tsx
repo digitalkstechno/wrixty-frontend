@@ -224,6 +224,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                     {renderSubLink("Status", "/status")}
                     {renderSubLink("Product", "/product")}
                     {renderSubLink("Return Order Type", "/return-order-type")}
+                    {renderSubLink("Reason to Call", "/reason-to-call")}
                   </div>
                 )}
               </div>
@@ -303,6 +304,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                         {renderSubLink("Status", "/status")}
                         {renderSubLink("Product", "/product")}
                         {renderSubLink("Return Order Type", "/return-order-type")}
+                        {renderSubLink("Reason to Call", "/reason-to-call")}
                       </div>
                     )}
                   </div>
