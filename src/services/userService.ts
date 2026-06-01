@@ -1,4 +1,4 @@
-import { apiGet, apiGetById, apiPost, apiPut, apiDelete, endPointApi } from './api';
+import api, { apiGet, apiGetById, apiPost, apiPut, apiDelete, endPointApi } from './api';
 
 export interface User {
   _id: string;
@@ -44,18 +44,38 @@ export const fetchUser = async (id: string): Promise<User> => {
 };
 
 // POST /api/users
-export const createUser = async (payload: CreateUserPayload): Promise<User> => {
-  const { data } = await apiPost(endPointApi.userCreate, payload);
+export const createUser = async (payload: CreateUserPayload | FormData): Promise<User> => {
+  const { data } = await api.post(endPointApi.userCreate, payload, {
+    headers: {
+      'Content-Type': payload instanceof FormData ? 'multipart/form-data' : 'application/json',
+    }
+  });
   return data;
 };
 
 // PUT /api/users/:id
-export const updateUser = async (id: string, payload: UpdateUserPayload): Promise<User> => {
-  const { data } = await apiPut(endPointApi.userUpdate, id, payload);
+export const updateUser = async (id: string, payload: UpdateUserPayload | FormData): Promise<User> => {
+  const { data } = await api.put(`${endPointApi.userUpdate}/${id}`, payload, {
+    headers: {
+      'Content-Type': payload instanceof FormData ? 'multipart/form-data' : 'application/json',
+    }
+  });
   return data;
 };
 
 // DELETE /api/users/:id
 export const deleteUser = async (id: string): Promise<void> => {
   await apiDelete(endPointApi.userDelete, id);
+};
+
+// POST /api/upload
+export const uploadFile = async (file: File): Promise<{ file_url: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await api.post(endPointApi.upload, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
 };

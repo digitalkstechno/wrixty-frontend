@@ -32,7 +32,8 @@ export default function LoginPage() {
       localStorage.setItem("wrixty_authenticated_user", JSON.stringify({
         name: user.name,
         email: user.email,
-        roles: user.roles
+        roles: user.roles,
+        permissions: user.permissions
       }));
       router.push("/dashboard");
     } catch (err: any) {

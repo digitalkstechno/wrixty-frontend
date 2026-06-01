@@ -38,11 +38,37 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{name: string; email: string; avatar: string} | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    name: string;
+    email: string;
+    avatar: string;
+    permissions?: Record<string, boolean>;
+  } | null>(null);
   
   // Collapsible Submenu states
   const [teamOpen, setTeamOpen] = useState(false);
   const [masterOpen, setMasterOpen] = useState(false);
+
+  // Helper to check permission with Superadmin / Admin role & email bypass
+  const hasPermission = (perm: string) => {
+    const userDataStr = localStorage.getItem("wrixty_authenticated_user");
+    if (!userDataStr) return false;
+    try {
+      const u = JSON.parse(userDataStr);
+      const roles = u.roles || [];
+      const isBypass = roles.some((r: string) => 
+        r.toLowerCase() === 'superadmin' || 
+        r.toLowerCase() === 'admin' || 
+        r.toLowerCase() === 'main manager' || 
+        r.toLowerCase() === 'manager'
+      ) || u.email?.toLowerCase() === 'superadmin@gmail.com';
+      
+      if (isBypass) return true;
+      return !!u.permissions?.[perm];
+    } catch (e) {
+      return false;
+    }
+  };
 
   // Initialize theme and auth status
   useEffect(() => {
@@ -59,14 +85,16 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
           setCurrentUser({
             name: u.name || "Admin",
             email: u.email || "superadmin@gmail.com",
-            avatar: u.name ? u.name.charAt(0).toUpperCase() : "A"
+            avatar: u.name ? u.name.charAt(0).toUpperCase() : "A",
+            permissions: u.permissions || {}
           });
         } catch (e) {}
       } else {
         setCurrentUser({
           name: "Admin",
           email: "superadmin@gmail.com",
-          avatar: "A"
+          avatar: "A",
+          permissions: {}
         });
       }
       if (pathname === "/login") {
@@ -152,60 +180,64 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
             
             {/* Sidebar navigation list: matches screenshot exactly */}
             <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 no-scrollbar">
-              {renderLink("Dashboards", "/dashboard", <DashboardIcon className="w-4.5 h-4.5" />)}
-              {renderLink("Lead", "/lead-list", <People className="w-4.5 h-4.5" />)}
-              {renderLink("Restore Lead", "/restore-data", <RestoreFromTrash className="w-4.5 h-4.5" />)}
-              {renderLink("Order", "/order-list", <ShoppingCart className="w-4.5 h-4.5" />)}
-              {renderLink("Activity Log", "/activity-log", <History className="w-4.5 h-4.5" />)}
-              {renderLink("Task List", "/task-list", <Description className="w-4.5 h-4.5" />)}
-              {renderLink("Reminder List", "/reminder-list", <Notifications className="w-4.5 h-4.5" />)}
-              {renderLink("Kanban", "/kanban-list", <ViewKanban className="w-4.5 h-4.5" />)}
-              {renderLink("Return Order", "/return-order", <AssignmentReturn className="w-4.5 h-4.5" />)}
-              {renderLink("Courier", "/currier-list", <LocalShipping className="w-4.5 h-4.5" />)}
-              {renderLink("Return Order Report", "/staff-return-order-list", <Assessment className="w-4.5 h-4.5" />)}
+              {hasPermission("Dashboard-view") && renderLink("Dashboards", "/dashboard", <DashboardIcon className="w-4.5 h-4.5" />)}
+              {hasPermission("Lead-list") && renderLink("Lead", "/lead-list", <People className="w-4.5 h-4.5" />)}
+              {hasPermission("Restore-lead-list") && renderLink("Restore Lead", "/restore-data", <RestoreFromTrash className="w-4.5 h-4.5" />)}
+              {hasPermission("Order-edit") && renderLink("Order", "/order-list", <ShoppingCart className="w-4.5 h-4.5" />)}
+              {hasPermission("Activity-log") && renderLink("Activity Log", "/activity-log", <History className="w-4.5 h-4.5" />)}
+              {hasPermission("Lead-try") && renderLink("Task List", "/task-list", <Description className="w-4.5 h-4.5" />)}
+              {hasPermission("Reminder-list") && renderLink("Reminder List", "/reminder-list", <Notifications className="w-4.5 h-4.5" />)}
+              {hasPermission("Kanban-view") && renderLink("Kanban", "/kanban-list", <ViewKanban className="w-4.5 h-4.5" />)}
+              {hasPermission("Return-order-list") && renderLink("Return Order", "/return-order", <AssignmentReturn className="w-4.5 h-4.5" />)}
+              {hasPermission("Currier-list") && renderLink("Courier", "/currier-list", <LocalShipping className="w-4.5 h-4.5" />)}
+              {hasPermission("Return-order-report-view") && renderLink("Return Order Report", "/staff-return-order-list", <Assessment className="w-4.5 h-4.5" />)}
               
               {/* Collapsible Team Member Menu */}
-              <div className="space-y-1 text-left">
-                <button
-                  onClick={() => setTeamOpen(!teamOpen)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <Groups className="w-4.5 h-4.5" />
-                    <span>Team Member</span>
-                  </div>
-                  {teamOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
-                </button>
-                {teamOpen && (
-                  <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
-                    {renderSubLink("User", "/users")}
-                    {renderSubLink("Role", "/roles-list")}
-                    {renderSubLink("Team", "/team-list")}
-                  </div>
-                )}
-              </div>
+              {(hasPermission("User-list") || hasPermission("Roles-list") || hasPermission("Team-list")) && (
+                <div className="space-y-1 text-left">
+                  <button
+                    onClick={() => setTeamOpen(!teamOpen)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <Groups className="w-4.5 h-4.5" />
+                      <span>Team Member</span>
+                    </div>
+                    {teamOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
+                  </button>
+                  {teamOpen && (
+                    <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
+                      {hasPermission("User-list") && renderSubLink("User", "/users")}
+                      {hasPermission("Roles-list") && renderSubLink("Role", "/roles-list")}
+                      {hasPermission("Team-list") && renderSubLink("Team", "/team-list")}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Collapsible Master Menu */}
-              <div className="space-y-1 text-left">
-                <button
-                  onClick={() => setMasterOpen(!masterOpen)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <Security className="w-4.5 h-4.5" />
-                    <span>Master</span>
-                  </div>
-                  {masterOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
-                </button>
-                {masterOpen && (
-                  <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
-                    {renderSubLink("Status", "/status")}
-                    {renderSubLink("Product", "/product")}
-                    {renderSubLink("Return Order Type", "/return-order-type")}
-                    {renderSubLink("Reason to Call", "/reason-to-call")}
-                  </div>
-                )}
-              </div>
+              {(hasPermission("Status-list") || hasPermission("Product-list") || hasPermission("Return-order-type-list") || hasPermission("Reason-to-call-list")) && (
+                <div className="space-y-1 text-left">
+                  <button
+                    onClick={() => setMasterOpen(!masterOpen)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <Security className="w-4.5 h-4.5" />
+                      <span>Master</span>
+                    </div>
+                    {masterOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
+                  </button>
+                  {masterOpen && (
+                    <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
+                      {hasPermission("Status-list") && renderSubLink("Status", "/status")}
+                      {hasPermission("Product-list") && renderSubLink("Product", "/product")}
+                      {hasPermission("Return-order-type-list") && renderSubLink("Return Order Type", "/return-order-type")}
+                      {hasPermission("Reason-to-call-list") && renderSubLink("Reason to Call", "/reason-to-call")}
+                    </div>
+                  )}
+                </div>
+              )}
             </nav>
             
             <div className="p-4 border-t border-border-ui shrink-0">
@@ -233,60 +265,64 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                 </div>
                 
                 <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 no-scrollbar">
-                  {renderLink("Dashboards", "/dashboard", <DashboardIcon className="w-4.5 h-4.5" />)}
-                  {renderLink("Lead", "/lead-list", <People className="w-4.5 h-4.5" />)}
-                  {renderLink("Restore Lead", "/restore-data", <RestoreFromTrash className="w-4.5 h-4.5" />)}
-                  {renderLink("Order", "/order-list", <ShoppingCart className="w-4.5 h-4.5" />)}
-                  {renderLink("Activity Log", "/activity-log", <History className="w-4.5 h-4.5" />)}
-                  {renderLink("Task List", "/task-list", <Description className="w-4.5 h-4.5" />)}
-                  {renderLink("Reminder List", "/reminder-list", <Notifications className="w-4.5 h-4.5" />)}
-                  {renderLink("Kanban", "/kanban-list", <ViewKanban className="w-4.5 h-4.5" />)}
-                  {renderLink("Return Order", "/return-order", <AssignmentReturn className="w-4.5 h-4.5" />)}
-                  {renderLink("Courier", "/currier-list", <LocalShipping className="w-4.5 h-4.5" />)}
-                  {renderLink("Return Order Report", "/staff-return-order-list", <Assessment className="w-4.5 h-4.5" />)}
+                  {hasPermission("Dashboard-view") && renderLink("Dashboards", "/dashboard", <DashboardIcon className="w-4.5 h-4.5" />)}
+                  {hasPermission("Lead-list") && renderLink("Lead", "/lead-list", <People className="w-4.5 h-4.5" />)}
+                  {hasPermission("Restore-lead-list") && renderLink("Restore Lead", "/restore-data", <RestoreFromTrash className="w-4.5 h-4.5" />)}
+                  {hasPermission("Order-edit") && renderLink("Order", "/order-list", <ShoppingCart className="w-4.5 h-4.5" />)}
+                  {hasPermission("Activity-log") && renderLink("Activity Log", "/activity-log", <History className="w-4.5 h-4.5" />)}
+                  {hasPermission("Lead-try") && renderLink("Task List", "/task-list", <Description className="w-4.5 h-4.5" />)}
+                  {hasPermission("Reminder-list") && renderLink("Reminder List", "/reminder-list", <Notifications className="w-4.5 h-4.5" />)}
+                  {hasPermission("Kanban-view") && renderLink("Kanban", "/kanban-list", <ViewKanban className="w-4.5 h-4.5" />)}
+                  {hasPermission("Return-order-list") && renderLink("Return Order", "/return-order", <AssignmentReturn className="w-4.5 h-4.5" />)}
+                  {hasPermission("Currier-list") && renderLink("Courier", "/currier-list", <LocalShipping className="w-4.5 h-4.5" />)}
+                  {hasPermission("Return-order-report-view") && renderLink("Return Order Report", "/staff-return-order-list", <Assessment className="w-4.5 h-4.5" />)}
                   
                   {/* Collapsible Mobile Team Member */}
-                  <div className="space-y-1 text-left">
-                    <button
-                      onClick={() => setTeamOpen(!teamOpen)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <Groups className="w-4.5 h-4.5" />
-                        <span>Team Member</span>
-                      </div>
-                      {teamOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
-                    </button>
-                    {teamOpen && (
-                      <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
-                        {renderSubLink("User", "/users")}
-                        {renderSubLink("Role", "/roles-list")}
-                        {renderSubLink("Team", "/team-list")}
-                      </div>
-                    )}
-                  </div>
+                  {(hasPermission("User-list") || hasPermission("Roles-list") || hasPermission("Team-list")) && (
+                    <div className="space-y-1 text-left">
+                      <button
+                        onClick={() => setTeamOpen(!teamOpen)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <Groups className="w-4.5 h-4.5" />
+                          <span>Team Member</span>
+                        </div>
+                        {teamOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
+                      </button>
+                      {teamOpen && (
+                        <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
+                          {hasPermission("User-list") && renderSubLink("User", "/users")}
+                          {hasPermission("Roles-list") && renderSubLink("Role", "/roles-list")}
+                          {hasPermission("Team-list") && renderSubLink("Team", "/team-list")}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Collapsible Mobile Master */}
-                  <div className="space-y-1 text-left">
-                    <button
-                      onClick={() => setMasterOpen(!masterOpen)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <Security className="w-4.5 h-4.5" />
-                        <span>Master</span>
-                      </div>
-                      {masterOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
-                    </button>
-                    {masterOpen && (
-                      <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
-                        {renderSubLink("Status", "/status")}
-                        {renderSubLink("Product", "/product")}
-                        {renderSubLink("Return Order Type", "/return-order-type")}
-                        {renderSubLink("Reason to Call", "/reason-to-call")}
-                      </div>
-                    )}
-                  </div>
+                  {(hasPermission("Status-list") || hasPermission("Product-list") || hasPermission("Return-order-type-list") || hasPermission("Reason-to-call-list")) && (
+                    <div className="space-y-1 text-left">
+                      <button
+                        onClick={() => setMasterOpen(!masterOpen)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[13px] font-medium capitalize tracking-wide text-text-secondary hover:bg-background transition-all duration-200"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <Security className="w-4.5 h-4.5" />
+                          <span>Master</span>
+                        </div>
+                        {masterOpen ? <KeyboardArrowDown className="w-4 h-4" /> : <KeyboardArrowRight className="w-4 h-4" />}
+                      </button>
+                      {masterOpen && (
+                        <div className="border-l-2 border-primary-teal/50 ml-6 pl-4 space-y-1 animate-fade-in text-left">
+                          {hasPermission("Status-list") && renderSubLink("Status", "/status")}
+                          {hasPermission("Product-list") && renderSubLink("Product", "/product")}
+                          {hasPermission("Return-order-type-list") && renderSubLink("Return Order Type", "/return-order-type")}
+                          {hasPermission("Reason-to-call-list") && renderSubLink("Reason to Call", "/reason-to-call")}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </nav>
                 
                 <div className="p-4 border-t border-border-ui shrink-0">

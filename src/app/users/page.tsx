@@ -13,6 +13,7 @@ import {
   createUser,
   updateUser,
   deleteUser,
+  uploadFile,
   User,
 } from "../../services/userService";
 import { fetchRoles, Role as BackendRole } from "../../services/roleService";
@@ -33,6 +34,12 @@ export default function UsersPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [activeUser, setActiveUser] = useState<User | null>(null);
 
+  // Deletion Custom UI Confirm Modal States
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [deletePhotoOpen, setDeletePhotoOpen] = useState(false);
+  const [userToDeletePhoto, setUserToDeletePhoto] = useState<User | null>(null);
+
   // Form Fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -44,6 +51,18 @@ export default function UsersPage() {
   const [role, setRole] = useState("");
   const [backendRoles, setBackendRoles] = useState<BackendRole[]>([]);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const [checkPhoto, setCheckPhoto] = useState("");
+  const [checkPhotoFile, setCheckPhotoFile] = useState<File | null>(null);
+  const [checkPhotoFilename, setCheckPhotoFilename] = useState("");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setCheckPhotoFile(file);
+    setCheckPhotoFilename(file.name);
+    setCheckPhoto(URL.createObjectURL(file));
+  };
 
   const loadUsers = useCallback(async () => {
     try {
@@ -131,18 +150,26 @@ export default function UsersPage() {
     e.preventDefault();
     if (!validate()) return;
     try {
-      await createUser({
-        name,
-        email,
-        password,
-        mobile_number: mobile,
-        company_number: companyNo,
-        aadhar_card: aadhar,
-        bank_number: bankNo,
-        roles: [role]
-      });
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("mobile_number", mobile);
+      formData.append("company_number", companyNo);
+      formData.append("aadhar_card", aadhar);
+      formData.append("bank_number", bankNo);
+      formData.append("roles", role);
+      if (checkPhotoFile) {
+        formData.append("check_photo", checkPhotoFile);
+      } else {
+        formData.append("check_photo", checkPhoto);
+      }
+
+      await createUser(formData);
       setModalOpen(false);
       clear();
+      setPage(1);
+      setSearch("");
       loadUsers();
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to create user.");
@@ -157,6 +184,9 @@ export default function UsersPage() {
     setCompanyNo(user.company_number || "");
     setAadhar(user.aadhar_card || "");
     setBankNo(user.bank_number || "");
+    setCheckPhoto(user.check_photo || "");
+    setCheckPhotoFile(null);
+    setCheckPhotoFilename("");
     setPassword("");
     setRole(user.roles[0] || backendRoles[0]?.name || "");
     setFormErrors({});
@@ -168,16 +198,24 @@ export default function UsersPage() {
     if (!validate()) return;
     if (!activeUser) return;
     try {
-      await updateUser(activeUser._id, {
-        name,
-        email,
-        password: password || undefined,
-        mobile_number: mobile,
-        company_number: companyNo,
-        aadhar_card: aadhar,
-        bank_number: bankNo,
-        roles: [role]
-      });
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("email", email);
+      if (password) {
+        formData.append("password", password);
+      }
+      formData.append("mobile_number", mobile);
+      formData.append("company_number", companyNo);
+      formData.append("aadhar_card", aadhar);
+      formData.append("bank_number", bankNo);
+      formData.append("roles", role);
+      if (checkPhotoFile) {
+        formData.append("check_photo", checkPhotoFile);
+      } else {
+        formData.append("check_photo", checkPhoto);
+      }
+
+      await updateUser(activeUser._id, formData);
       setEditOpen(false);
       clear();
       loadUsers();
@@ -186,23 +224,52 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (user: User) => {
+    setUserToDelete(user);
+    setDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!userToDelete) return;
     try {
-      await deleteUser(id);
+      await deleteUser(userToDelete._id);
+      setDeleteOpen(false);
+      setUserToDelete(null);
       loadUsers();
     } catch {
       setError("Failed to delete user.");
     }
   };
 
-  const handleLoginAs = (user: User) => {
-    localStorage.setItem("wrixty_authenticated", "true");
-    localStorage.setItem("wrixty_authenticated_user", JSON.stringify({
-      name: user.name,
-      email: user.email,
-      roles: user.roles
-    }));
-    window.location.href = "/dashboard";
+  const handleLoginAs = async (user: User) => {
+    try {
+      const rolesRes = await fetchRoles({ page: 1, limit: 100 });
+      let permissions: Record<string, boolean> = {};
+      (user.roles || []).forEach(roleName => {
+        const foundRole = rolesRes.data.find(r => r.name === roleName);
+        if (foundRole && foundRole.permissions) {
+          permissions = { ...permissions, ...foundRole.permissions };
+        }
+      });
+      localStorage.setItem("wrixty_authenticated", "true");
+      localStorage.setItem("wrixty_authenticated_user", JSON.stringify({
+        name: user.name,
+        email: user.email,
+        roles: user.roles,
+        permissions: permissions
+      }));
+      window.location.href = "/dashboard";
+    } catch (err) {
+      console.error("Login-as permissions load failed:", err);
+      localStorage.setItem("wrixty_authenticated", "true");
+      localStorage.setItem("wrixty_authenticated_user", JSON.stringify({
+        name: user.name,
+        email: user.email,
+        roles: user.roles,
+        permissions: {}
+      }));
+      window.location.href = "/dashboard";
+    }
   };
 
   const clear = () => {
@@ -212,6 +279,9 @@ export default function UsersPage() {
     setCompanyNo("");
     setAadhar("");
     setBankNo("");
+    setCheckPhoto("");
+    setCheckPhotoFile(null);
+    setCheckPhotoFilename("");
     setPassword("");
     setRole(backendRoles[0]?.name || "");
     setFormErrors({});
@@ -223,6 +293,35 @@ export default function UsersPage() {
     { key: "email", header: "Email" },
     { key: "company_number", header: "Company No" },
     { key: "roles", header: "Role", render: (val) => (val || []).join(", ") },
+    {
+      key: "check_photo",
+      header: "Check Photo",
+      sortable: false,
+      render: (val, row) => {
+        if (!val) return <span className="text-text-secondary/50 font-semibold italic text-[11px]">No Image</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <a href={val} target="_blank" rel="noreferrer" className="block relative group">
+              <img 
+                src={val} 
+                alt="Check Photo" 
+                className="w-10 h-10 object-cover rounded-lg border border-border-ui shadow-sm transition-transform group-hover:scale-105 duration-200" 
+              />
+            </a>
+            <button
+              onClick={() => {
+                setUserToDeletePhoto(row);
+                setDeletePhotoOpen(true);
+              }}
+              className="p-1.5 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 rounded transition-all"
+              title="Delete Image"
+            >
+              <FiTrash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        );
+      }
+    },
     {
       key: "actions",
       header: "Action",
@@ -244,7 +343,7 @@ export default function UsersPage() {
             <FiUserCheck className="w-4.5 h-4.5" />
           </button>
           <button
-            onClick={() => handleDelete(row._id)}
+            onClick={() => handleDelete(row)}
             className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all inline-flex items-center justify-center"
             title="Delete User"
           >
@@ -305,7 +404,7 @@ export default function UsersPage() {
       {/* Add User Modal */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Add User" sizeClass="max-w-4xl">
         <form onSubmit={handleCreate} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pb-24">
             {/* Left Column */}
             <div className="space-y-4">
               <Input label="Name" placeholder="Enter Name" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -331,11 +430,19 @@ export default function UsersPage() {
                 </label>
                 <div className="flex items-center">
                   <label className="flex items-center justify-center px-4 py-2 bg-white border border-zinc-200 rounded-l cursor-pointer hover:bg-zinc-50 transition-colors text-xs text-zinc-700 border-r-0">
-                    Choose File
-                    <input type="file" className="hidden" />
+                    {checkPhotoFile ? "Change File" : "Choose File"}
+                    <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                   </label>
-                  <div className="flex-1 px-3 py-2 text-xs text-zinc-500 bg-white border border-zinc-200 rounded-r border-l-0">
-                    No file chosen
+                  <div className="flex-1 px-3 py-2 text-xs text-zinc-500 bg-white border border-zinc-200 rounded-r border-l-0 truncate">
+                    {checkPhotoFile ? (
+                      <span className="text-zinc-700 font-semibold">{checkPhotoFilename}</span>
+                    ) : checkPhoto ? (
+                      <a href={checkPhoto} target="_blank" rel="noreferrer" className="text-primary-teal font-semibold hover:underline">
+                        View Uploaded Image ↗
+                      </a>
+                    ) : (
+                      "No file chosen"
+                    )}
                   </div>
                 </div>
               </div>
@@ -365,7 +472,7 @@ export default function UsersPage() {
       {/* Edit User Modal */}
       <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Edit User Details" sizeClass="max-w-4xl">
         <form onSubmit={handleEditSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pb-24">
             {/* Left Column */}
             <div className="space-y-4">
               <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -382,6 +489,31 @@ export default function UsersPage() {
               <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               {formErrors.email && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.email}</p>}
               <Input label="Company Number" value={companyNo} onChange={(e) => setCompanyNo(e.target.value)} />
+              
+              {/* Check Photo File Input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                  Check Photo
+                </label>
+                <div className="flex items-center">
+                  <label className="flex items-center justify-center px-4 py-2 bg-white border border-zinc-200 rounded-l cursor-pointer hover:bg-zinc-50 transition-colors text-xs text-zinc-700 border-r-0">
+                    {checkPhotoFile ? "Change File" : "Choose File"}
+                    <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                  </label>
+                  <div className="flex-1 px-3 py-2 text-xs text-zinc-500 bg-white border border-zinc-200 rounded-r border-l-0 truncate">
+                    {checkPhotoFile ? (
+                      <span className="text-zinc-700 font-semibold">{checkPhotoFilename}</span>
+                    ) : checkPhoto ? (
+                      <a href={checkPhoto} target="_blank" rel="noreferrer" className="text-primary-teal font-semibold hover:underline">
+                        View Uploaded Image ↗
+                      </a>
+                    ) : (
+                      "No file chosen"
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <Input label="New Password (optional)" placeholder="Leave blank to keep current" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
               {formErrors.password && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.password}</p>}
               <Select
@@ -402,6 +534,92 @@ export default function UsersPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete User Custom Confirm Modal */}
+      <Modal 
+        isOpen={deleteOpen} 
+        onClose={() => setDeleteOpen(false)} 
+        title="Confirm User Deletion"
+        sizeClass="max-w-md"
+      >
+        <div className="space-y-6 text-center py-2">
+          <div className="w-16 h-16 bg-rose-50 dark:bg-rose-950/20 text-rose-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
+            <FiTrash2 className="w-8 h-8 text-rose-600" />
+          </div>
+          <div className="space-y-2">
+            <h4 className="text-base font-bold text-text-primary uppercase tracking-wide">
+              Delete "{userToDelete?.name}"?
+            </h4>
+            <p className="text-xs text-text-secondary">
+              Are you absolutely sure you want to delete this user? This action is permanent and cannot be undone.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 justify-center pt-2">
+            <Button
+              onClick={() => setDeleteOpen(false)}
+              variant="secondary"
+              className="px-6 rounded-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={executeDelete}
+              variant="primary"
+              className="bg-rose-600 hover:bg-rose-500 text-white px-6 rounded-lg font-bold shadow-md hover:shadow-lg transition-all"
+            >
+              Delete User
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Photo Custom Confirm Modal */}
+      <Modal 
+        isOpen={deletePhotoOpen} 
+        onClose={() => setDeletePhotoOpen(false)} 
+        title="Confirm Image Deletion"
+        sizeClass="max-w-md"
+      >
+        <div className="space-y-6 text-center py-2">
+          <div className="w-16 h-16 bg-rose-50 dark:bg-rose-950/20 text-rose-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
+            <FiTrash2 className="w-8 h-8 text-rose-600" />
+          </div>
+          <div className="space-y-2">
+            <h4 className="text-base font-bold text-text-primary uppercase tracking-wide">
+              Remove Check Photo?
+            </h4>
+            <p className="text-xs text-text-secondary">
+              Are you sure you want to delete the check photo for "{userToDeletePhoto?.name}"?
+            </p>
+          </div>
+          <div className="flex items-center gap-3 justify-center pt-2">
+            <Button
+              onClick={() => setDeletePhotoOpen(false)}
+              variant="secondary"
+              className="px-6 rounded-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!userToDeletePhoto) return;
+                try {
+                  await updateUser(userToDeletePhoto._id, { check_photo: "" });
+                  setDeletePhotoOpen(false);
+                  setUserToDeletePhoto(null);
+                  loadUsers();
+                } catch (err) {
+                  console.error(err);
+                }
+              }}
+              variant="primary"
+              className="bg-rose-600 hover:bg-rose-500 text-white px-6 rounded-lg font-bold shadow-md hover:shadow-lg transition-all"
+            >
+              Delete Image
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

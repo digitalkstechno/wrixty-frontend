@@ -56,6 +56,9 @@ export interface EndPointApi {
   courierCreate: string;
   courierUpdate: string;
   courierDelete: string;
+
+  // Upload
+  upload: string;
 }
 
 const endPointApi: EndPointApi = {
@@ -116,6 +119,9 @@ const endPointApi: EndPointApi = {
   courierCreate: 'couriers',
   courierUpdate: 'couriers',
   courierDelete: 'couriers',
+
+  // Upload
+  upload: 'upload',
 };
 
 export default endPointApi;

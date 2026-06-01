@@ -23,6 +23,7 @@ import { exportCopy, exportExcel, exportCSV, exportPDF } from "../../utils/expor
 import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
+import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
 
 const MODULE_PERMISSIONS = [
   { module: "Dashboard", perms: ["Dashboard-view"] },
@@ -61,6 +62,10 @@ export default function RolesListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [activeRole, setActiveRole] = useState<Role | null>(null);
+
+  // Delete Confirm Modal State
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
   const [name, setName] = useState("");
   const [selectedPerms, setSelectedPerms] = useState<Record<string, boolean>>({});
@@ -126,9 +131,17 @@ export default function RolesListPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (role: Role) => {
+    setRoleToDelete(role);
+    setDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!roleToDelete) return;
     try {
-      await deleteRole(id);
+      await deleteRole(roleToDelete._id);
+      setDeleteOpen(false);
+      setRoleToDelete(null);
       loadRoles();
     } catch {
       setError("Failed to delete role.");
@@ -200,7 +213,7 @@ export default function RolesListPage() {
             <Edit className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => handleDelete(row._id)}
+            onClick={() => handleDelete(row)}
             className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm"
             title="Delete Role"
           >
@@ -417,6 +430,15 @@ export default function RolesListPage() {
           </div>
         </form>
       </Modal>
+
+      <DeleteConfirmModal
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={executeDelete}
+        title="Delete Role"
+        itemName={roleToDelete?.name}
+        itemType="role"
+      />
     </div>
   );
 }

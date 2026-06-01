@@ -7,6 +7,7 @@ import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Select } from "../../components/common/Select";
 import { Button } from "../../components/common/Button";
+import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
 import { fetchUsers, User } from "../../services/userService";
 import {
   fetchTeams,
@@ -31,6 +32,10 @@ export default function TeamListPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [activeTeam, setActiveTeam] = useState<Team | null>(null);
+
+  // Delete Confirm Modal State
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
 
   const [name, setName] = useState("");
   const [head, setHead] = useState("");
@@ -135,9 +140,17 @@ export default function TeamListPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (team: Team) => {
+    setTeamToDelete(team);
+    setDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!teamToDelete) return;
     try {
-      await deleteTeam(id);
+      await deleteTeam(teamToDelete._id);
+      setDeleteOpen(false);
+      setTeamToDelete(null);
       loadTeams();
     } catch {
       setError("Failed to delete team.");
@@ -170,7 +183,7 @@ export default function TeamListPage() {
             <Edit className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => handleDelete(row._id)}
+            onClick={() => handleDelete(row)}
             className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm"
             title="Delete Team"
           >
@@ -316,6 +329,15 @@ export default function TeamListPage() {
           </button>
         </form>
       </Modal>
+
+      <DeleteConfirmModal
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={executeDelete}
+        title="Delete Team"
+        itemName={teamToDelete?.name}
+        itemType="team"
+      />
     </div>
   );
 }

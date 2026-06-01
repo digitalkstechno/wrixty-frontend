@@ -5,6 +5,7 @@ export interface AuthResponse {
   name: string;
   email: string;
   roles: string[];
+  permissions?: Record<string, boolean>;
   token: string;
 }
 
