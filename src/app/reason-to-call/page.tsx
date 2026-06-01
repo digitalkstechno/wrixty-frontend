@@ -15,10 +15,13 @@ import { Delete, Edit } from "@mui/icons-material";
 import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
+import { useToast } from "../../context/ToastContext";
+import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
 
 export default function ReasonToCallPage() {
   const [reasons, setReasons] = useState<ReasonToCall[]>([]);
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
   const [error, setError] = useState<string | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -32,6 +35,10 @@ export default function ReasonToCallPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [activeReason, setActiveReason] = useState<ReasonToCall | null>(null);
+
+  // Delete Confirm Modal State
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [reasonToDelete, setReasonToDelete] = useState<ReasonToCall | null>(null);
 
   const [name, setName] = useState("");
   const [formErrors, setFormErrors] = useState<{ name?: string }>({});
@@ -68,9 +75,10 @@ export default function ReasonToCallPage() {
       await createReasonToCall({ name });
       setModalOpen(false);
       clear();
+      toast.success("Reason to call created successfully.");
       loadReasons();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to create reason to call.");
+      toast.error(err?.response?.data?.message || "Failed to create reason to call.");
     }
   };
 
@@ -89,18 +97,28 @@ export default function ReasonToCallPage() {
       await updateReasonToCall(activeReason._id, { name });
       setEditOpen(false);
       clear();
+      toast.success("Reason to call updated successfully.");
       loadReasons();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to update reason to call.");
+      toast.error(err?.response?.data?.message || "Failed to update reason to call.");
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (reason: ReasonToCall) => {
+    setReasonToDelete(reason);
+    setDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!reasonToDelete) return;
     try {
-      await deleteReasonToCall(id);
+      await deleteReasonToCall(reasonToDelete._id);
+      setDeleteOpen(false);
+      setReasonToDelete(null);
+      toast.success("Reason to call deleted successfully.");
       loadReasons();
-    } catch {
-      setError("Failed to delete reason to call.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to delete reason to call.");
     }
   };
 
@@ -127,7 +145,7 @@ export default function ReasonToCallPage() {
       else if (type === 'csv') exportCSV(rows, exportFields, 'reasons_to_call');
       else if (type === 'pdf') exportPDF(rows, exportFields, 'Reason to Call List');
     } catch {
-      setError('Export failed. Please try again.');
+      toast.error('Export failed. Please try again.');
     } finally {
       setExportLoading(false);
     }
@@ -145,7 +163,7 @@ export default function ReasonToCallPage() {
           <button onClick={() => openEdit(row)} className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-all shadow-sm" title="Edit Reason">
             <Edit className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => handleDelete(row._id)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded transition-all shadow-sm" title="Delete Reason">
+          <button onClick={() => handleDelete(row)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded transition-all shadow-sm" title="Delete Reason">
             <Delete className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -225,6 +243,15 @@ export default function ReasonToCallPage() {
           </div>
         </form>
       </Modal>
+
+      <DeleteConfirmModal
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={executeDelete}
+        title="Delete Reason to Call"
+        itemName={reasonToDelete?.name}
+        itemType="reason to call"
+      />
     </div>
   );
 }

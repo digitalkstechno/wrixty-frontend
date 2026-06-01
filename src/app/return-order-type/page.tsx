@@ -13,8 +13,11 @@ import { Delete, Edit, AssignmentReturn, Add } from "@mui/icons-material";
 import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
+import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
+import { useToast } from "../../context/ToastContext";
 
 export default function ReturnOrderTypePage() {
+  const toast = useToast();
   const [types, setTypes] = useState<ReturnOrderType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +31,10 @@ export default function ReturnOrderTypePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [activeType, setActiveType] = useState<ReturnOrderType | null>(null);
+
+  // Delete Confirm Modal State
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [typeToDelete, setTypeToDelete] = useState<ReturnOrderType | null>(null);
   const [name, setName] = useState("");
   const [formErrors, setFormErrors] = useState<{ name?: string }>({});
 
@@ -64,9 +71,10 @@ export default function ReturnOrderTypePage() {
       setModalOpen(false);
       setName("");
       setFormErrors({});
+      toast.success("Return order type created successfully.");
       loadTypes();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to create return order type.");
+      toast.error(err?.response?.data?.message || "Failed to create return order type.");
     }
   };
 
@@ -87,18 +95,28 @@ export default function ReturnOrderTypePage() {
       setName("");
       setActiveType(null);
       setFormErrors({});
+      toast.success("Return order type updated successfully.");
       loadTypes();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to update return order type.");
+      toast.error(err?.response?.data?.message || "Failed to update return order type.");
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (type: ReturnOrderType) => {
+    setTypeToDelete(type);
+    setDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!typeToDelete) return;
     try {
-      await deleteReturnOrderType(id);
+      await deleteReturnOrderType(typeToDelete._id);
+      setDeleteOpen(false);
+      setTypeToDelete(null);
+      toast.success("Return order type deleted successfully.");
       loadTypes();
-    } catch {
-      setError("Failed to delete return order type.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to delete return order type.");
     }
   };
 
@@ -123,7 +141,7 @@ export default function ReturnOrderTypePage() {
           <button onClick={() => openEdit(row)} className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm" title="Edit">
             <Edit className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => handleDelete(row._id)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm" title="Delete">
+          <button onClick={() => handleDelete(row)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm" title="Delete">
             <Delete className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -188,6 +206,15 @@ export default function ReturnOrderTypePage() {
           </div>
         </form>
       </Modal>
+
+      <DeleteConfirmModal
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={executeDelete}
+        title="Delete Return Order Type"
+        itemName={typeToDelete?.name}
+        itemType="return order type"
+      />
     </div>
   );
 }

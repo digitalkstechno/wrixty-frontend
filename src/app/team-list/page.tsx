@@ -8,6 +8,7 @@ import { Input } from "../../components/common/Input";
 import { Select } from "../../components/common/Select";
 import { Button } from "../../components/common/Button";
 import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
+import { useToast } from "../../context/ToastContext";
 import { fetchUsers, User } from "../../services/userService";
 import {
   fetchTeams,
@@ -18,6 +19,7 @@ import {
 } from "../../services/teamService";
 
 export default function TeamListPage() {
+  const toast = useToast();
   const [teams, setTeams] = useState<Team[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,9 +109,10 @@ export default function TeamListPage() {
       });
       setModalOpen(false);
       clear();
+      toast.success("Team registered successfully.");
       loadTeams();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to register team.");
+      toast.error(err?.response?.data?.message || "Failed to register team.");
     }
   };
 
@@ -134,9 +137,10 @@ export default function TeamListPage() {
       });
       setEditOpen(false);
       clear();
+      toast.success("Team updated successfully.");
       loadTeams();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to update team.");
+      toast.error(err?.response?.data?.message || "Failed to update team.");
     }
   };
 
@@ -151,9 +155,10 @@ export default function TeamListPage() {
       await deleteTeam(teamToDelete._id);
       setDeleteOpen(false);
       setTeamToDelete(null);
+      toast.success("Team deleted successfully.");
       loadTeams();
-    } catch {
-      setError("Failed to delete team.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to delete team.");
     }
   };
 

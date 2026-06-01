@@ -16,6 +16,7 @@ import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
 import { useToast } from "../../context/ToastContext";
+import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
 
 export default function ProductPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -33,6 +34,10 @@ export default function ProductPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
+
+  // Delete Confirm Modal State
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   // Form fields
   const [name, setName] = useState("");
@@ -108,9 +113,17 @@ export default function ProductPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (product: Product) => {
+    setProductToDelete(product);
+    setDeleteOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!productToDelete) return;
     try {
-      await deleteProduct(id);
+      await deleteProduct(productToDelete._id);
+      setDeleteOpen(false);
+      setProductToDelete(null);
       toast.success("Product deleted successfully.");
       loadProducts();
     } catch {
@@ -185,7 +198,7 @@ export default function ProductPage() {
           <button onClick={() => openEdit(row)} className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm" title="Edit Product">
             <Edit className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => handleDelete(row._id)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm" title="Delete Product">
+          <button onClick={() => handleDelete(row)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm" title="Delete Product">
             <Delete className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -282,6 +295,15 @@ export default function ProductPage() {
           </div>
         </form>
       </Modal>
+
+      <DeleteConfirmModal
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={executeDelete}
+        title="Delete Product"
+        itemName={productToDelete?.name}
+        itemType="product"
+      />
     </div>
   );
 }
