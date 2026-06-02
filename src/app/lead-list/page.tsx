@@ -84,7 +84,7 @@ export default function LeadListPage() {
         product: l.product || (l.products?.map((p: any) => p.name).join(", ") || ""),
         amount: l.amount || 0,
         quantity: l.quantity || 1,
-        subtotal: (l.amount || 0),
+        subtotal: l.subtotal || (l.products?.length ? l.products.reduce((acc: number, p: any) => acc + (p.subtotal || (p.amount * (p.quantity || 1)) || 0), 0) : (l.amount || 0)),
         assgin: l.assgin?.name || l.assgin || "",
         assginId: l.assgin?._id || l.assgin || "",
         date: l.createdAt ? (() => {
@@ -156,21 +156,23 @@ export default function LeadListPage() {
   }, []);
 
   const updateLead = async (id: string, updated: Partial<Lead>) => {
+    // Optimistic update first — no re-fetch to avoid table blink
+    setLeads(prev => prev.map(l => {
+      if (l.id === id) {
+        const merged = { ...l, ...updated };
+        if (updated.amount !== undefined || updated.quantity !== undefined) {
+          merged.subtotal = merged.amount * merged.quantity;
+        }
+        return merged;
+      }
+      return l;
+    }));
     try {
       await updateLeadApi(id, updated);
-      setLeads(prev => prev.map(l => {
-        if (l.id === id) {
-          const merged = { ...l, ...updated };
-          if (updated.amount !== undefined || updated.quantity !== undefined) {
-            merged.subtotal = merged.amount * merged.quantity;
-          }
-          return merged;
-        }
-        return l;
-      }));
       toast.success("Lead updated successfully!");
-      loadLeadsData();
     } catch (err: any) {
+      // Revert on failure
+      loadLeadsData();
       toast.error(err.response?.data?.message || "Failed to update lead");
     }
   };
@@ -648,6 +650,7 @@ export default function LeadListPage() {
           searchable={true}
           onSearchChange={(val) => {
             setSearchQuery(val);
+            // Table component already debounces 400ms before calling this
             loadLeadsData(undefined, val);
           }}
         />
