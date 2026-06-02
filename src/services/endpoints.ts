@@ -73,6 +73,9 @@ export interface EndPointApi {
   orderCreate: string;
   orderUpdate: string;
   orderDelete: string;
+
+  // Activity Logs
+  activityLogs: string;
 }
 
 const endPointApi: EndPointApi = {
@@ -150,6 +153,9 @@ const endPointApi: EndPointApi = {
   orderCreate: 'orders',
   orderUpdate: 'orders',
   orderDelete: 'orders',
+
+  // Activity Logs
+  activityLogs: 'activity-logs',
 };
 
 export default endPointApi;
