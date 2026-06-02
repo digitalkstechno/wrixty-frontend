@@ -3,6 +3,7 @@
 import React from "react";
 import { Table, Column } from "../../components/common/Table";
 import { Restore } from "@mui/icons-material";
+import { usePermission } from "../../utils/permissionUtils";
 
 export interface Lead {
   id: string;
@@ -25,6 +26,7 @@ export interface Lead {
 }
 
 export default function RestoreDataPage() {
+  const { hasPermission } = usePermission();
   const [leads, setLeads] = React.useState<Lead[]>([
     { id: "1", name: "Rajesh Kumar", phone_number: "9988776655", product: "Wrixty Ashwagandha Gold", amount: 1200, quantity: 2, subtotal: 2400, assgin: "Aman Sharma", date: "2026-05-29", time: "10:30", status: "New", note: "Interested in stress relief products.", isDeleted: true, deleteDate: "2026-05-30" }
   ]);
@@ -49,12 +51,16 @@ export default function RestoreDataPage() {
       header: "Action",
       sortable: false,
       render: (_, row) => (
-        <button
-          onClick={() => restoreLead(row.id)}
-          className="flex items-center gap-1 py-1 px-2.5 bg-primary-teal/10 border border-primary-teal/20 hover:bg-primary-teal hover:text-white text-[10px] font-extrabold uppercase tracking-wider text-primary-teal rounded-lg transition-all"
-        >
-          <Restore className="w-3.5 h-3.5" /> Restore
-        </button>
+        <>
+          {hasPermission("Restore-lead-action") && (
+            <button
+              onClick={() => restoreLead(row.id)}
+              className="flex items-center gap-1 py-1 px-2.5 bg-primary-teal/10 border border-primary-teal/20 hover:bg-primary-teal hover:text-white text-[10px] font-extrabold uppercase tracking-wider text-primary-teal rounded-lg transition-all"
+            >
+              <Restore className="w-3.5 h-3.5" /> Restore
+            </button>
+          )}
+        </>
       )
     }
   ];

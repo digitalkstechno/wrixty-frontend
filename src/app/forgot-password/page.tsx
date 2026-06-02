@@ -1,52 +1,44 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
-import { loginUser } from "../../services/authService";
+import { forgotPassword } from "../../services/authService";
 import { useToast } from "../../context/ToastContext";
+import Link from "next/link";
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const router = useRouter();
   const toast = useToast();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const auth = localStorage.getItem("wrixty_authenticated");
-    if (auth) {
-      router.push("/dashboard");
-    }
-  }, [router]);
+  const [resetLink, setResetLink] = useState(""); // For easy testing in development if email fails
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setResetLink("");
 
     try {
-      const user = await loginUser({ email, password });
-      localStorage.setItem("wrixty_authenticated", "true");
-      localStorage.setItem("wrixty_token", user.token); // Save JWT token!
-      localStorage.setItem("wrixty_authenticated_user", JSON.stringify({
-        name: user.name,
-        email: user.email,
-        roles: user.roles,
-        permissions: user.permissions
-      }));
-      toast.success("Login Successful! Welcome back.");
-      router.push("/dashboard");
+      const response = await forgotPassword(email);
+      toast.success(response.message);
+      
+      // If we got the test link back, we can display it so the user can easily copy/click it in local dev
+      if (response.resetUrlForTesting) {
+        setResetLink(response.resetUrlForTesting);
+      } else {
+        // If mail was successfully sent or no testing link returned, redirect to login
+        setTimeout(() => {
+          router.push("/login");
+        }, 3000);
+      }
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.message || "Invalid email address or password. Please try again.";
+      const errorMsg = err?.response?.data?.message || "Failed to initiate password reset. Please try again.";
       toast.error(errorMsg);
+    } finally {
       setLoading(false);
     }
-  };
-
-  const autofillAdmin = () => {
-    setEmail("Superadmin@gmail.com");
-    setPassword("12345678");
   };
 
   return (
@@ -62,10 +54,10 @@ export default function LoginPage() {
               WA
             </div>
             <h1 className="text-2xl font-black tracking-widest text-gradient-primary uppercase">
-              Wrixty Ayurveda
+              Forgot Password
             </h1>
             <p className="text-xs text-text-secondary font-semibold tracking-wider uppercase">
-              Sign In to Your Account
+              Enter your email to reset password
             </p>
           </div>
 
@@ -80,27 +72,6 @@ export default function LoginPage() {
               className="bg-card-bg border-border-ui text-text-primary placeholder:text-text-secondary/50 focus:border-primary-teal"
             />
 
-            <div className="relative">
-              <Input
-                label="Password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="bg-card-bg border-border-ui text-text-primary placeholder:text-text-secondary/50 focus:border-primary-teal"
-              />
-              <div className="text-right mt-1">
-                <button
-                  type="button"
-                  onClick={() => router.push("/forgot-password")}
-                  className="text-xs font-bold text-primary-teal hover:text-teal-400 transition-colors cursor-pointer"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-            </div>
-
             <Button
               type="submit"
               variant="primary"
@@ -108,19 +79,34 @@ export default function LoginPage() {
               isLoading={loading}
               className="py-3"
             >
-              Sign In
+              Send Reset Link
             </Button>
           </form>
 
+          {resetLink && (
+            <div className="p-4 bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-900 rounded-lg text-left space-y-2">
+              <p className="text-[11px] font-bold text-teal-800 dark:text-teal-400 uppercase tracking-wider">
+                Development Test Link:
+              </p>
+              <a 
+                href={resetLink}
+                className="text-xs font-semibold text-primary-teal hover:underline break-all block"
+              >
+                {resetLink}
+              </a>
+              <p className="text-[10px] text-zinc-500 italic">
+                (Click or copy the link above to reset your password directly)
+              </p>
+            </div>
+          )}
+
           <div className="pt-4 border-t border-border-ui/50">
-            <button
-              onClick={autofillAdmin}
-              className="text-[10px] font-bold uppercase tracking-widest text-text-secondary hover:text-primary-teal transition-all flex items-center justify-center gap-2 mx-auto"
+            <Link
+              href="/login"
+              className="text-xs font-bold uppercase tracking-widest text-text-secondary hover:text-primary-teal transition-all flex items-center justify-center gap-2 mx-auto"
             >
-              <span className="w-4 h-[1px] bg-border-ui"></span>
-              Click to auto-fill demo credentials
-              <span className="w-4 h-[1px] bg-border-ui"></span>
-            </button>
+              Back to Sign In
+            </Link>
           </div>
         </div>
       </div>

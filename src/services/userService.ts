@@ -10,6 +10,7 @@ export interface User {
   check_photo?: string;
   bank_number: string;
   roles: string[];
+  password?: string;
   createdAt?: string;
   updatedAt?: string;
 }

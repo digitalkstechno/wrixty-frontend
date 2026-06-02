@@ -15,8 +15,10 @@ import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
 import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
 import { useToast } from "../../context/ToastContext";
+import { usePermission } from "../../utils/permissionUtils";
 
 export default function ReturnOrderTypePage() {
+  const { hasPermission } = usePermission();
   const toast = useToast();
   const [types, setTypes] = useState<ReturnOrderType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,12 +140,16 @@ export default function ReturnOrderTypePage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
-          <button onClick={() => openEdit(row)} className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm" title="Edit">
-            <Edit className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => handleDelete(row)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm" title="Delete">
-            <Delete className="w-3.5 h-3.5" />
-          </button>
+          {hasPermission("Return-order-type-edit") && (
+            <button onClick={() => openEdit(row)} className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm" title="Edit">
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {hasPermission("Return-order-type-delete") && (
+            <button onClick={() => handleDelete(row)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm" title="Delete">
+              <Delete className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )
     }
@@ -156,7 +162,9 @@ export default function ReturnOrderTypePage() {
         {/* Header Block */}
         <div className="pb-4">
           <h2 className="text-xl font-bold text-zinc-800 ">Return Order Type List</h2>
-          <Button onClick={() => { setName(""); setFormErrors({}); setModalOpen(true); }} variant="primary">Add Return Order Type</Button>
+          {hasPermission("Return-order-type-add") && (
+            <Button onClick={() => { setName(""); setFormErrors({}); setModalOpen(true); }} variant="primary">Add Return Order Type</Button>
+          )}
         </div>
 
         {error && (

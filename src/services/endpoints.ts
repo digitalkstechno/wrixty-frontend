@@ -43,6 +43,8 @@ export interface EndPointApi {
 
   // Auth
   authLogin: string;
+  authForgotPassword: string;
+  authResetPassword: string;
 
   // Teams
   teams: string;
@@ -118,6 +120,8 @@ const endPointApi: EndPointApi = {
 
   // Auth
   authLogin: 'auth/login',
+  authForgotPassword: 'auth/forgot-password',
+  authResetPassword: 'auth/reset-password',
 
   // Teams
   teams: 'teams',

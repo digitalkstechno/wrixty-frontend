@@ -12,6 +12,7 @@ import { FiEdit, FiTrash2, FiRefreshCcw } from "react-icons/fi";
 import { fetchProducts } from "../../services/productService";
 import { fetchUsers } from "../../services/userService";
 import { fetchOrders, createOrderApi, updateOrderApi, deleteOrderApi } from "../../services/orderService";
+import { usePermission } from "../../utils/permissionUtils";
 
 export interface Order {
   id: string;
@@ -41,6 +42,7 @@ interface SelectedProductRow {
 }
 
 export default function OrderListPage() {
+  const { hasPermission } = usePermission();
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -306,27 +308,33 @@ export default function OrderListPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => openEdit(row)}
-            className="p-2 text-text-secondary hover:text-primary-teal hover:bg-primary-teal/5 rounded-lg transition-all inline-flex items-center justify-center"
-            title="Edit Order"
-          >
-            <FiEdit className="w-4.5 h-4.5" />
-          </button>
-          <button
-            onClick={() => handleDelete(row.id)}
-            className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all inline-flex items-center justify-center"
-            title="Delete Order"
-          >
-            <FiTrash2 className="w-4.5 h-4.5" />
-          </button>
-          <button
-            onClick={() => openRepeat(row)}
-            className="p-2 text-text-secondary hover:text-success hover:bg-success/5 rounded-lg transition-all inline-flex items-center justify-center"
-            title="Repeat Order"
-          >
-            <FiRefreshCcw className="w-4.5 h-4.5" />
-          </button>
+          {hasPermission("Order-edit") && (
+            <button
+              onClick={() => openEdit(row)}
+              className="p-2 text-text-secondary hover:text-primary-teal hover:bg-primary-teal/5 rounded-lg transition-all inline-flex items-center justify-center"
+              title="Edit Order"
+            >
+              <FiEdit className="w-4.5 h-4.5" />
+            </button>
+          )}
+          {hasPermission("Order-delete") && (
+            <button
+              onClick={() => handleDelete(row.id)}
+              className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all inline-flex items-center justify-center"
+              title="Delete Order"
+            >
+              <FiTrash2 className="w-4.5 h-4.5" />
+            </button>
+          )}
+          {hasPermission("Repart-order") && (
+            <button
+              onClick={() => openRepeat(row)}
+              className="p-2 text-text-secondary hover:text-success hover:bg-success/5 rounded-lg transition-all inline-flex items-center justify-center"
+              title="Repeat Order"
+            >
+              <FiRefreshCcw className="w-4.5 h-4.5" />
+            </button>
+          )}
         </div>
       )
     }

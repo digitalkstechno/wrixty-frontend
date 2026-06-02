@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { fetchStatuses } from "../../services/statusService";
 import { fetchLeads, updateLeadApi } from "../../services/leadService";
+import { usePermission } from "../../utils/permissionUtils";
 
 export default function KanbanListPage() {
+  const { hasPermission } = usePermission();
   const [statuses, setStatuses] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,6 +57,10 @@ export default function KanbanListPage() {
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>, statusObj: any) => {
     e.preventDefault();
+    if (!hasPermission("Kanban-update")) {
+      setDraggedLeadId(null);
+      return;
+    }
     if (draggedLeadId) {
       // Optimistic update locally
       updateLeadLocally(draggedLeadId, { statusName: statusObj.name });
@@ -110,9 +116,9 @@ export default function KanbanListPage() {
                   stageLeads.map((lead) => (
                     <div
                       key={lead.id}
-                      draggable
+                      draggable={hasPermission("Kanban-update")}
                       onDragStart={(e) => handleDragStart(e, lead.id)}
-                      className={`group relative p-3.5 bg-zinc-50  border border-zinc-200/50  rounded-lg shadow-sm text-left transition-all cursor-grab active:cursor-grabbing hover:shadow-md hover:border-primary-teal/30  ${draggedLeadId === lead.id ? 'opacity-50 border-dashed' : ''}`}
+                      className={`group relative p-3.5 bg-zinc-50  border border-zinc-200/50  rounded-lg shadow-sm text-left transition-all ${hasPermission("Kanban-update") ? "cursor-grab active:cursor-grabbing hover:shadow-md hover:border-primary-teal/30" : "cursor-default"}  ${draggedLeadId === lead.id ? 'opacity-50 border-dashed' : ''}`}
                     >
                       {/* Default Visible Content */}
                       <div>

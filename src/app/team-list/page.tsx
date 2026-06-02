@@ -9,6 +9,7 @@ import { Select } from "../../components/common/Select";
 import { Button } from "../../components/common/Button";
 import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
 import { useToast } from "../../context/ToastContext";
+import { usePermission } from "../../utils/permissionUtils";
 import { fetchUsers, User } from "../../services/userService";
 import {
   fetchTeams,
@@ -19,6 +20,7 @@ import {
 } from "../../services/teamService";
 
 export default function TeamListPage() {
+  const { hasPermission } = usePermission();
   const toast = useToast();
   const [teams, setTeams] = useState<Team[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -180,20 +182,24 @@ export default function TeamListPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => openEdit(row)}
-            className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all shadow-sm"
-            title="Edit Team"
-          >
-            <Edit className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => handleDelete(row)}
-            className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm"
-            title="Delete Team"
-          >
-            <Delete className="w-3.5 h-3.5" />
-          </button>
+          {hasPermission("Team-edit") && (
+            <button
+              onClick={() => openEdit(row)}
+              className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all shadow-sm"
+              title="Edit Team"
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {hasPermission("Team-delete") && (
+            <button
+              onClick={() => handleDelete(row)}
+              className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm"
+              title="Delete Team"
+            >
+              <Delete className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )
     }
@@ -211,16 +217,18 @@ export default function TeamListPage() {
             Group agents under regional or target teams
           </p>
         </div>
-        <Button
-          onClick={() => {
-            clear();
-            setModalOpen(true);
-          }}
-          variant="primary"
-          className="rounded-lg px-6"
-        >
-          Create Team
-        </Button>
+        {hasPermission("Team-add") && (
+          <Button
+            onClick={() => {
+              clear();
+              setModalOpen(true);
+            }}
+            variant="primary"
+            className="rounded-lg px-6"
+          >
+            Create Team
+          </Button>
+        )}
       </div>
 
       {error && (

@@ -17,8 +17,10 @@ import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
 import { useToast } from "../../context/ToastContext";
 import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
+import { usePermission } from "../../utils/permissionUtils";
 
 export default function ReasonToCallPage() {
+  const { hasPermission } = usePermission();
   const [reasons, setReasons] = useState<ReasonToCall[]>([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
@@ -160,12 +162,16 @@ export default function ReasonToCallPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
-          <button onClick={() => openEdit(row)} className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-all shadow-sm" title="Edit Reason">
-            <Edit className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => handleDelete(row)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded transition-all shadow-sm" title="Delete Reason">
-            <Delete className="w-3.5 h-3.5" />
-          </button>
+          {hasPermission("Reason-to-call-edit") && (
+            <button onClick={() => openEdit(row)} className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded transition-all shadow-sm" title="Edit Reason">
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {hasPermission("Reason-to-call-delete") && (
+            <button onClick={() => handleDelete(row)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded transition-all shadow-sm" title="Delete Reason">
+              <Delete className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )
     }
@@ -179,7 +185,9 @@ export default function ReasonToCallPage() {
         <div className="border-b border-zinc-100 dark:border-zinc-900 pb-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">Reason to Call List</h2>
-            <Button onClick={() => { clear(); setModalOpen(true); }} variant="primary">Add Reason to Call</Button>
+            {hasPermission("Reason-to-call-add") && (
+              <Button onClick={() => { clear(); setModalOpen(true); }} variant="primary">Add Reason to Call</Button>
+            )}
           </div>
           {/* Export Buttons */}
           <div className="flex items-center gap-1.5">

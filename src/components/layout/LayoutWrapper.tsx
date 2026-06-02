@@ -58,9 +58,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
       const roles = u.roles || [];
       const isBypass = roles.some((r: string) => 
         r.toLowerCase() === 'superadmin' || 
-        r.toLowerCase() === 'admin' || 
-        r.toLowerCase() === 'main manager' || 
-        r.toLowerCase() === 'manager'
+        r.toLowerCase() === 'admin'
       ) || u.email?.toLowerCase() === 'superadmin@gmail.com';
       
       if (isBypass) return true;
@@ -74,7 +72,9 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     // Auth Check
     const auth = localStorage.getItem("wrixty_authenticated");
-    if (!auth && pathname !== "/login") {
+    const isPublicPath = pathname === "/login" || pathname === "/" || pathname === "/forgot-password" || pathname === "/reset-password";
+    
+    if (!auth && !isPublicPath) {
       router.push("/login");
     } else if (auth) {
       setIsAuthenticated(true);
@@ -106,11 +106,12 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
   const handleLogout = () => {
     localStorage.removeItem("wrixty_authenticated");
     localStorage.removeItem("wrixty_authenticated_user");
+    localStorage.removeItem("wrixty_token");
     setIsAuthenticated(false);
     router.push("/login");
   };
 
-  if (pathname === "/login" || pathname === "/") {
+  if (pathname === "/login" || pathname === "/" || pathname === "/forgot-password" || pathname === "/reset-password") {
     return (
       <ToastProvider>
         {children}
@@ -185,7 +186,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
               {hasPermission("Restore-lead-list") && renderLink("Restore Lead", "/restore-data", <RestoreFromTrash className="w-4.5 h-4.5" />)}
               {hasPermission("Order-edit") && renderLink("Order", "/order-list", <ShoppingCart className="w-4.5 h-4.5" />)}
               {hasPermission("Activity-log") && renderLink("Activity Log", "/activity-log", <History className="w-4.5 h-4.5" />)}
-              {hasPermission("Lead-try") && renderLink("Task List", "/task-list", <Description className="w-4.5 h-4.5" />)}
+              {hasPermission("Lead-try") && renderLink("Lead-try", "/task-list", <Description className="w-4.5 h-4.5" />)}
               {hasPermission("Reminder-list") && renderLink("Reminder List", "/reminder-list", <Notifications className="w-4.5 h-4.5" />)}
               {hasPermission("Kanban-view") && renderLink("Kanban", "/kanban-list", <ViewKanban className="w-4.5 h-4.5" />)}
               {hasPermission("Return-order-list") && renderLink("Return Order", "/return-order", <AssignmentReturn className="w-4.5 h-4.5" />)}

@@ -31,6 +31,7 @@ export interface Lead {
 
 import { useToast } from "../../context/ToastContext";
 import { Table, Column } from "../../components/common/Table";
+import { usePermission } from "../../utils/permissionUtils";
 import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Select } from "../../components/common/Select";
@@ -49,6 +50,7 @@ interface SelectedProductRow {
 }
 
 export default function LeadListPage() {
+  const { hasPermission } = usePermission();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -360,14 +362,18 @@ export default function LeadListPage() {
       header: "Convert Order",
       sortable: false,
       render: (_, row) => (
-        <Button
-          onClick={() => openConvertModal(row)}
-          variant="primary"
-          size="sm"
-          className="text-[11px] whitespace-nowrap px-4"
-        >
-          Convert To Order
-        </Button>
+        <>
+          {hasPermission("Lead-transfer") && (
+            <Button
+              onClick={() => openConvertModal(row)}
+              variant="primary"
+              size="sm"
+              className="text-[11px] whitespace-nowrap px-4"
+            >
+              Convert To Order
+            </Button>
+          )}
+        </>
       )
     },
     {
@@ -390,20 +396,24 @@ export default function LeadListPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => openEditModal(row)}
-            className="p-2 text-text-secondary hover:text-primary-teal hover:bg-primary-teal/5 rounded-lg transition-all inline-flex items-center justify-center"
-            title="Edit Lead"
-          >
-            <FiEdit className="w-4.5 h-4.5" />
-          </button>
-          <button
-            onClick={() => deleteLead(row.id)}
-            className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all inline-flex items-center justify-center"
-            title="Delete Lead"
-          >
-            <FiTrash2 className="w-4.5 h-4.5" />
-          </button>
+          {hasPermission("Lead-edit") && (
+            <button
+              onClick={() => openEditModal(row)}
+              className="p-2 text-text-secondary hover:text-primary-teal hover:bg-primary-teal/5 rounded-lg transition-all inline-flex items-center justify-center"
+              title="Edit Lead"
+            >
+              <FiEdit className="w-4.5 h-4.5" />
+            </button>
+          )}
+          {hasPermission("Lead-delete") && (
+            <button
+              onClick={() => deleteLead(row.id)}
+              className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all inline-flex items-center justify-center"
+              title="Delete Lead"
+            >
+              <FiTrash2 className="w-4.5 h-4.5" />
+            </button>
+          )}
         </div>
       )
     }
@@ -431,13 +441,15 @@ export default function LeadListPage() {
             <span className="text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
               📅 May 30, 2026 - May 30, 2026
             </span>
-            <Button
-              onClick={() => { setActiveLead(null); setLeadFormModalOpen(true); }}
-              variant="primary"
-              className="rounded-lg px-6"
-            >
-              Add Lead
-            </Button>
+            {hasPermission("Lead-add") && (
+              <Button
+                onClick={() => { setActiveLead(null); setLeadFormModalOpen(true); }}
+                variant="primary"
+                className="rounded-lg px-6"
+              >
+                Add Lead
+              </Button>
+            )}
           </div>
         </div>
 
@@ -519,22 +531,26 @@ export default function LeadListPage() {
               {selectedIds.length} leads selected
             </span>
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-card-bg border-primary-teal/20 text-primary-teal rounded-lg"
-              >
-                <SwapHoriz className="w-4 h-4 mr-2" /> Bulk Assign
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                className="rounded-lg"
-                onClick={handleBulkDelete}
-                isLoading={isDeletingLead}
-              >
-                <FiTrash2 className="w-4 h-4 mr-2" /> Bulk Delete
-              </Button>
+              {hasPermission("Lead-transfer") && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-card-bg border-primary-teal/20 text-primary-teal rounded-lg"
+                >
+                  <SwapHoriz className="w-4 h-4 mr-2" /> Bulk Assign
+                </Button>
+              )}
+              {hasPermission("Lead-delete") && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="rounded-lg"
+                  onClick={handleBulkDelete}
+                  isLoading={isDeletingLead}
+                >
+                  <FiTrash2 className="w-4 h-4 mr-2" /> Bulk Delete
+                </Button>
+              )}
             </div>
           </div>
         )}

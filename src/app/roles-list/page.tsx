@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Table, Column } from "../../components/common/Table";
-import { 
-  AdminPanelSettings, 
-  Person, 
+import {
+  AdminPanelSettings,
+  Person,
   SupervisorAccount,
   CheckCircle,
   RadioButtonUnchecked,
@@ -25,6 +25,7 @@ import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
 import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
 import { useToast } from "../../context/ToastContext";
+import { usePermission } from "../../utils/permissionUtils";
 
 const MODULE_PERMISSIONS = [
   { module: "Dashboard", perms: ["Dashboard-view"] },
@@ -48,6 +49,7 @@ const MODULE_PERMISSIONS = [
 ];
 
 export default function RolesListPage() {
+  const { hasPermission } = usePermission();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
@@ -205,9 +207,9 @@ export default function RolesListPage() {
       header: "Role Name",
       render: (val) => (
         <div className="flex items-center gap-2">
-          {val === "Superadmin" ? <AdminPanelSettings className="text-primary-teal w-4 h-4" /> : 
-           val === "Manager" ? <SupervisorAccount className="text-primary-teal w-4 h-4" /> :
-           <Person className="text-primary-teal w-4 h-4" />}
+          {val === "Superadmin" ? <AdminPanelSettings className="text-primary-teal w-4 h-4" /> :
+            val === "Manager" ? <SupervisorAccount className="text-primary-teal w-4 h-4" /> :
+              <Person className="text-primary-teal w-4 h-4" />}
           <span className="font-bold uppercase tracking-wide">{val}</span>
         </div>
       )
@@ -218,20 +220,24 @@ export default function RolesListPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => openEdit(row)}
-            className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all shadow-sm"
-            title="Edit Role"
-          >
-            <Edit className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => handleDelete(row)}
-            className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm"
-            title="Delete Role"
-          >
-            <Delete className="w-3.5 h-3.5" />
-          </button>
+          {hasPermission("Roles-edit") && (
+            <button
+              onClick={() => openEdit(row)}
+              className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all shadow-sm"
+              title="Edit Role"
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {hasPermission("Roles-delete") && (
+            <button
+              onClick={() => handleDelete(row)}
+              className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm"
+              title="Delete Role"
+            >
+              <Delete className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )
     }
@@ -276,7 +282,7 @@ export default function RolesListPage() {
       <table className="w-full text-left text-xs">
         <thead>
           <tr className="border-b border-zinc-250 dark:border-zinc-800 font-semibold text-text-secondary bg-background/50">
-            <th className="p-4 w-1/4">
+            <th className="p-4 w-[180px]">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -287,7 +293,7 @@ export default function RolesListPage() {
                 <span>Module</span>
               </div>
             </th>
-            <th className="p-4 w-3/4">Permissions</th>
+            <th className="p-4">Permissions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -305,9 +311,9 @@ export default function RolesListPage() {
                 </div>
               </td>
               <td className="p-4">
-                <div className="flex flex-wrap gap-x-8 gap-y-3">
+                <div className="flex flex-wrap gap-x-4 gap-y-3">
                   {mod.perms.map(perm => (
-                    <label key={perm} className="flex items-center gap-2 cursor-pointer font-medium text-text-secondary min-w-[150px]">
+                    <label key={perm} className="flex items-center gap-2 cursor-pointer font-medium text-text-secondary min-w-[120px]">
                       <input
                         type="checkbox"
                         checked={!!selectedPerms[perm]}
@@ -329,29 +335,30 @@ export default function RolesListPage() {
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-zinc-950 p-6 border border-zinc-200 dark:border-zinc-900 rounded-md shadow-sm space-y-6">
-        
+
         {/* Header Block */}
         <div className="border-b border-zinc-100 dark:border-zinc-900 pb-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">
               Roles List
             </h2>
-            <Button 
-              onClick={() => { 
-                clear();
-                setModalOpen(true); 
-              }} 
-              variant="primary"
-            >
-              Add Role
-            </Button>
+            {hasPermission("Roles-add") && (
+              <Button
+                onClick={() => {
+                  clear();
+                  setModalOpen(true);
+                }}
+                variant="primary"
+              >
+                Add Role
+              </Button>
+            )}
           </div>
           {/* Export Buttons */}
           <div className="flex items-center gap-1.5">
             <button onClick={() => handleExport('copy')} disabled={exportLoading}
-              className={`px-3 py-1 text-[10px] font-semibold rounded border transition-all disabled:opacity-50 ${
-                copySuccess ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
-              }`}>{copySuccess ? 'Copied!' : 'Copy'}</button>
+              className={`px-3 py-1 text-[10px] font-semibold rounded border transition-all disabled:opacity-50 ${copySuccess ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                }`}>{copySuccess ? 'Copied!' : 'Copy'}</button>
             <button onClick={() => handleExport('excel')} disabled={exportLoading}
               className="px-3 py-1 text-[10px] font-semibold rounded border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">Excel</button>
             <button onClick={() => handleExport('csv')} disabled={exportLoading}
@@ -362,10 +369,10 @@ export default function RolesListPage() {
           </div>
         </div>
 
-        <Table 
-          data={roles} 
-          columns={columns} 
-          searchable={true} 
+        <Table
+          data={roles}
+          columns={columns}
+          searchable={true}
           searchPlaceholder="Search roles..."
           idField="_id"
           isLoading={loading}
@@ -383,7 +390,7 @@ export default function RolesListPage() {
         <form onSubmit={handleCreate} className="space-y-4">
           <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Enter Name" />
           {formErrors.name && <p className="text-rose-500 text-[11px] mt-1">{formErrors.name}</p>}
-          
+
           <div className="flex items-center justify-between pt-4">
             <h4 className="font-bold text-zinc-800 dark:text-zinc-200">Assign Permissions to Roles</h4>
             <button
@@ -395,7 +402,7 @@ export default function RolesListPage() {
             </button>
           </div>
           {renderPermissionsTable()}
-          
+
           <div className="flex justify-end pt-4">
             <Button
               type="submit"
@@ -413,9 +420,9 @@ export default function RolesListPage() {
         <form onSubmit={handleEdit} className="space-y-4">
           <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Enter Name" />
           {formErrors.name && <p className="text-rose-500 text-[11px] mt-1">{formErrors.name}</p>}
-          
+
           <div className="flex items-center justify-between pt-4">
-            <h4 className="font-bold text-zinc-800 dark:text-zinc-200">Assign Permissions to Roles</h4>
+            <h4 className="font-bold text-zinc-800 dark:text-zinc-200">Assidsgn Permissions to Roles</h4>
             <button
               type="button"
               onClick={toggleAllPermissions}

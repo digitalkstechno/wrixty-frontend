@@ -16,8 +16,10 @@ import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
 import { useToast } from "../../context/ToastContext";
+import { usePermission } from "../../utils/permissionUtils";
 
 export default function StatusPage() {
+  const { hasPermission } = usePermission();
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
@@ -172,12 +174,16 @@ export default function StatusPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
-          <button onClick={() => openEdit(row)} className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm" title="Edit Status">
-            <Edit className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => handleDelete(row._id)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm" title="Delete Status">
-            <Delete className="w-3.5 h-3.5" />
-          </button>
+          {hasPermission("Status-edit") && (
+            <button onClick={() => openEdit(row)} className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm" title="Edit Status">
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {hasPermission("Status-delete") && (
+            <button onClick={() => handleDelete(row._id)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm" title="Delete Status">
+              <Delete className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )
     }
@@ -191,7 +197,9 @@ export default function StatusPage() {
         <div className="pb-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-zinc-800 ">Status List</h2>
-            <Button onClick={() => { clear(); setModalOpen(true); }} variant="primary">Add Status</Button>
+            {hasPermission("Status-add") && (
+              <Button onClick={() => { clear(); setModalOpen(true); }} variant="primary">Add Status</Button>
+            )}
           </div>
           {/* Export Buttons */}
           <div className="flex items-center gap-1.5">

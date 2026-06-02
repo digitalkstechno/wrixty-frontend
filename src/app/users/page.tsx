@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "../../context/ToastContext";
 import {
   fetchUsers,
+  fetchUser,
   createUser,
   updateUser,
   deleteUser,
@@ -18,10 +19,12 @@ import {
   User,
 } from "../../services/userService";
 import { fetchRoles, Role as BackendRole } from "../../services/roleService";
+import { usePermission } from "../../utils/permissionUtils";
 
 export default function UsersPage() {
   const router = useRouter();
   const toast = useToast();
+  const { hasPermission } = usePermission();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -121,7 +124,7 @@ export default function UsersPage() {
   const validate = () => {
     const errors: Record<string, string> = {};
     if (!name.trim()) errors.name = "Name is required";
-    
+
     if (!email.trim()) {
       errors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
@@ -177,21 +180,26 @@ export default function UsersPage() {
     }
   };
 
-  const openEdit = (user: User) => {
-    setActiveUser(user);
-    setName(user.name);
-    setEmail(user.email);
-    setMobile(user.mobile_number || "");
-    setCompanyNo(user.company_number || "");
-    setAadhar(user.aadhar_card || "");
-    setBankNo(user.bank_number || "");
-    setCheckPhoto(user.check_photo || "");
-    setCheckPhotoFile(null);
-    setCheckPhotoFilename("");
-    setPassword("");
-    setRole(user.roles[0] || backendRoles[0]?.name || "");
-    setFormErrors({});
-    setEditOpen(true);
+  const openEdit = async (user: User) => {
+    try {
+      const fullUser = await fetchUser(user._id);
+      setActiveUser(fullUser);
+      setName(fullUser.name);
+      setEmail(fullUser.email);
+      setMobile(fullUser.mobile_number || "");
+      setCompanyNo(fullUser.company_number || "");
+      setAadhar(fullUser.aadhar_card || "");
+      setBankNo(fullUser.bank_number || "");
+      setCheckPhoto(fullUser.check_photo || "");
+      setCheckPhotoFile(null);
+      setCheckPhotoFilename("");
+      setPassword(fullUser.password || "");
+      setRole(fullUser.roles[0] || backendRoles[0]?.name || "");
+      setFormErrors({});
+      setEditOpen(true);
+    } catch {
+      toast.error("Failed to load user details.");
+    }
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -307,10 +315,10 @@ export default function UsersPage() {
         return (
           <div className="flex items-center gap-2">
             <a href={val} target="_blank" rel="noreferrer" className="block relative group">
-              <img 
-                src={val} 
-                alt="Check Photo" 
-                className="w-10 h-10 object-cover rounded-lg border border-border-ui shadow-sm transition-transform group-hover:scale-105 duration-200" 
+              <img
+                src={val}
+                alt="Check Photo"
+                className="w-10 h-10 object-cover rounded-lg border border-border-ui shadow-sm transition-transform group-hover:scale-105 duration-200"
               />
             </a>
             <button
@@ -333,13 +341,15 @@ export default function UsersPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => openEdit(row)}
-            className="p-2 text-text-secondary hover:text-primary-teal hover:bg-primary-teal/5 rounded-lg transition-all inline-flex items-center justify-center"
-            title="Edit User"
-          >
-            <FiEdit className="w-4.5 h-4.5" />
-          </button>
+          {hasPermission("User-edit") && (
+            <button
+              onClick={() => openEdit(row)}
+              className="p-2 text-text-secondary hover:text-primary-teal hover:bg-primary-teal/5 rounded-lg transition-all inline-flex items-center justify-center"
+              title="Edit User"
+            >
+              <FiEdit className="w-4.5 h-4.5" />
+            </button>
+          )}
           <button
             onClick={() => handleLoginAs(row)}
             className="p-2 text-text-secondary hover:text-secondary-cyan hover:bg-secondary-cyan/5 rounded-lg transition-all inline-flex items-center justify-center"
@@ -347,13 +357,15 @@ export default function UsersPage() {
           >
             <FiUserCheck className="w-4.5 h-4.5" />
           </button>
-          <button
-            onClick={() => handleDelete(row)}
-            className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all inline-flex items-center justify-center"
-            title="Delete User"
-          >
-            <FiTrash2 className="w-4.5 h-4.5" />
-          </button>
+          {hasPermission("User-delete") && (
+            <button
+              onClick={() => handleDelete(row)}
+              className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all inline-flex items-center justify-center"
+              title="Delete User"
+            >
+              <FiTrash2 className="w-4.5 h-4.5" />
+            </button>
+          )}
         </div>
       )
     }
@@ -371,21 +383,23 @@ export default function UsersPage() {
             Manage call agents, managers, and bank details
           </p>
         </div>
-        <Button
-          onClick={() => {
-            clear();
-            setModalOpen(true);
-          }}
-          variant="primary"
-          className="rounded-lg px-6"
-        >
-          Add User
-        </Button>
+        {hasPermission("User-add") && (
+          <Button
+            onClick={() => {
+              clear();
+              setModalOpen(true);
+            }}
+            variant="primary"
+            className="rounded-lg px-6"
+          >
+            Add User
+          </Button>
+        )}
       </div>
 
       <div className="bg-card-bg p-8 border border-border-ui rounded-lg shadow-soft">
-        <Table 
-          data={users} 
+        <Table
+          data={users}
           columns={columns}
           searchable={true}
           searchPlaceholder="Search users..."
@@ -413,7 +427,6 @@ export default function UsersPage() {
               <Input label="Aadhar Card" placeholder="Enter 12-Digit Aadhar Card" value={aadhar} onChange={(e) => handleAadharChange(e.target.value)} />
               {formErrors.aadhar && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.aadhar}</p>}
               <Input label="Bank Number" placeholder="Enter Bank Number" value={bankNo} onChange={(e) => handleBankChange(e.target.value)} />
-              <Input label="Confirm Password" placeholder="Enter Confirm Password" type="password" required />
             </div>
 
             {/* Right Column */}
@@ -421,7 +434,7 @@ export default function UsersPage() {
               <Input label="Email" placeholder="Enter Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               {formErrors.email && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.email}</p>}
               <Input label="Company Number" placeholder="Enter Company Number" value={companyNo} onChange={(e) => setCompanyNo(e.target.value)} />
-              
+
               {/* Check Photo File Input */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
@@ -488,7 +501,7 @@ export default function UsersPage() {
               <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               {formErrors.email && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.email}</p>}
               <Input label="Company Number" value={companyNo} onChange={(e) => setCompanyNo(e.target.value)} />
-              
+
               {/* Check Photo File Input */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
@@ -513,7 +526,7 @@ export default function UsersPage() {
                 </div>
               </div>
 
-              <Input label="New Password (optional)" placeholder="Leave blank to keep current" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input label="Password" placeholder="Enter password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
               {formErrors.password && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.password}</p>}
               <Select
                 label="Assigned Role"
@@ -536,9 +549,9 @@ export default function UsersPage() {
       </Modal>
 
       {/* Delete User Custom Confirm Modal */}
-      <Modal 
-        isOpen={deleteOpen} 
-        onClose={() => setDeleteOpen(false)} 
+      <Modal
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
         title="Confirm User Deletion"
         sizeClass="max-w-md"
       >
@@ -574,9 +587,9 @@ export default function UsersPage() {
       </Modal>
 
       {/* Delete Photo Custom Confirm Modal */}
-      <Modal 
-        isOpen={deletePhotoOpen} 
-        onClose={() => setDeletePhotoOpen(false)} 
+      <Modal
+        isOpen={deletePhotoOpen}
+        onClose={() => setDeletePhotoOpen(false)}
         title="Confirm Image Deletion"
         sizeClass="max-w-md"
       >

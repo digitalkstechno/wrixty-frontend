@@ -17,8 +17,10 @@ import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
 import { useToast } from "../../context/ToastContext";
 import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
+import { usePermission } from "../../utils/permissionUtils";
 
 export default function ProductPage() {
+  const { hasPermission } = usePermission();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
@@ -195,12 +197,16 @@ export default function ProductPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
-          <button onClick={() => openEdit(row)} className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm" title="Edit Product">
-            <Edit className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => handleDelete(row)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm" title="Delete Product">
-            <Delete className="w-3.5 h-3.5" />
-          </button>
+          {hasPermission("Product-edit") && (
+            <button onClick={() => openEdit(row)} className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm" title="Edit Product">
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {hasPermission("Product-delete") && (
+            <button onClick={() => handleDelete(row)} className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm" title="Delete Product">
+              <Delete className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )
     }
@@ -214,7 +220,9 @@ export default function ProductPage() {
         <div className="pb-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-zinc-800 ">Product List</h2>
-            <Button onClick={() => { clear(); setModalOpen(true); }} variant="primary">Add Product</Button>
+            {hasPermission("Product-add") && (
+              <Button onClick={() => { clear(); setModalOpen(true); }} variant="primary">Add Product</Button>
+            )}
           </div>
           {/* Export Buttons */}
           <div className="flex items-center gap-1.5">

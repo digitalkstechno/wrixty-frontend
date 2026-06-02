@@ -12,8 +12,10 @@ import {
   deleteCourier,
   Courier
 } from "../../services/courierService";
+import { usePermission } from "../../utils/permissionUtils";
 
 export default function CourierListPage() {
+  const { hasPermission } = usePermission();
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,20 +112,24 @@ export default function CourierListPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => openEdit(row)}
-            className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm"
-            title="Edit"
-          >
-            <Edit className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => handleDelete(row._id)}
-            className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm"
-            title="Delete"
-          >
-            <Delete className="w-3.5 h-3.5" />
-          </button>
+          {hasPermission("Currier-edit") && (
+            <button
+              onClick={() => openEdit(row)}
+              className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm"
+              title="Edit"
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {hasPermission("Currier-delete") && (
+            <button
+              onClick={() => handleDelete(row._id)}
+              className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm"
+              title="Delete"
+            >
+              <Delete className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )
     }
@@ -141,16 +147,18 @@ export default function CourierListPage() {
             Manage dispatch delivery partners
           </p>
         </div>
-        <button
-          onClick={() => {
-            setName("");
-            setFormErrors({});
-            setModalOpen(true);
-          }}
-          className="flex items-center gap-1 py-1.5 px-3.5 bg-primary-teal hover:bg-primary-teal text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all"
-        >
-          <Add className="w-4 h-4" /> Add Courier
-        </button>
+        {hasPermission("Currier-add") && (
+          <button
+            onClick={() => {
+              setName("");
+              setFormErrors({});
+              setModalOpen(true);
+            }}
+            className="flex items-center gap-1 py-1.5 px-3.5 bg-primary-teal hover:bg-primary-teal text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm transition-all"
+          >
+            <Add className="w-4 h-4" /> Add Courier
+          </button>
+        )}
       </div>
 
       {error && (

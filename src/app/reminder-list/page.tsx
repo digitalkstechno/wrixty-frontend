@@ -5,6 +5,7 @@ import { Table, Column } from "../../components/common/Table";
 import { FiTrash2 } from "react-icons/fi";
 import { useToast } from "../../context/ToastContext";
 import { Button } from "../../components/common/Button";
+import { usePermission } from "../../utils/permissionUtils";
 
 export interface Reminder {
   id: string;
@@ -20,6 +21,7 @@ export interface Reminder {
 }
 
 export default function ReminderListPage() {
+  const { hasPermission } = usePermission();
   const [reminders, setReminders] = useState<Reminder[]>([
     { id: "1", title: "Follow-up for Ashwagandha pack", leadId: "1", name: "Rajesh Kumar", phone_number: "9988776655", reminderDate: "2026-05-31", product: "Wrixty Ashwagandha Gold", amount: 1200, quantity: 2, subtotal: 2400 }
   ]);
@@ -51,18 +53,20 @@ export default function ReminderListPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => handleDelete(row.id)}
-            disabled={isDeleting === row.id}
-            className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all inline-flex items-center justify-center disabled:opacity-50"
-            title="Delete Reminder"
-          >
-            {isDeleting === row.id ? (
-              <div className="w-4.5 h-4.5 border-2 border-error border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <FiTrash2 className="w-4.5 h-4.5" />
-            )}
-          </button>
+          {hasPermission("Reminder-edit") && (
+            <button
+              onClick={() => handleDelete(row.id)}
+              disabled={isDeleting === row.id}
+              className="p-2 text-text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all inline-flex items-center justify-center disabled:opacity-50"
+              title="Delete Reminder"
+            >
+              {isDeleting === row.id ? (
+                <div className="w-4.5 h-4.5 border-2 border-error border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <FiTrash2 className="w-4.5 h-4.5" />
+              )}
+            </button>
+          )}
         </div>
       )
     }

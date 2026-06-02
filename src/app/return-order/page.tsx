@@ -8,6 +8,7 @@ import { Button } from "../../components/common/Button";
 import { Select } from "../../components/common/Select";
 import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
+import { usePermission } from "../../utils/permissionUtils";
 import { fetchUsers } from "../../services/userService";
 import { fetchProducts } from "../../services/productService";
 
@@ -26,6 +27,7 @@ export interface ReturnOrder {
 }
 
 export default function ReturnOrderPage() {
+  const { hasPermission } = usePermission();
   const [returnOrders, setReturnOrders] = useState<ReturnOrder[]>([
     { id: "1", customerName: "Anil Saxena", phone_number: "9123456780", assginTo: "Aman Sharma", orderDate: "2026-05-20", returnDate: "2026-05-25", product: "Wrixty Neem Blood Purify", amount: 450, quantity: 2, subtotal: 900, type: "Wrong Product Delivered" }
   ]);
@@ -157,13 +159,15 @@ export default function ReturnOrderPage() {
             </div>
           </div>
 
-          <Button 
-            variant="primary" 
-            className="bg-teal-800 hover:bg-teal-700 focus:ring-teal-800 whitespace-nowrap"
-            onClick={() => setAddOpen(true)}
-          >
-            Add Return<br/>Order
-          </Button>
+          {hasPermission("Return-order-add") && (
+            <Button 
+              variant="primary" 
+              className="bg-teal-800 hover:bg-teal-700 focus:ring-teal-800 whitespace-nowrap"
+              onClick={() => setAddOpen(true)}
+            >
+              Add Return<br/>Order
+            </Button>
+          )}
         </div>
 
         {/* Filters Row */}
