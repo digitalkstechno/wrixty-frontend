@@ -12,7 +12,8 @@ import { usePermission } from "../../utils/permissionUtils";
 import { fetchUsers } from "../../services/userService";
 import { fetchProducts } from "../../services/productService";
 import { fetchOrders } from "../../services/orderService";
-import { fetchReturnOrders, createReturnOrderApi, deleteReturnOrderApi } from "../../services/returnOrderService";
+import { fetchReturnOrders, createReturnOrderApi, deleteReturnOrderApi, fetchReturnOrderById, updateReturnOrderApi } from "../../services/returnOrderService";
+import { Close } from "@mui/icons-material";
 
 export interface ReturnOrder {
   id: string;
@@ -26,6 +27,8 @@ export interface ReturnOrder {
   quantity: number;
   subtotal: number;
   type: string;
+  _products?: any[];
+  assginToId?: string;
 }
 
 export default function ReturnOrderPage() {
@@ -54,11 +57,15 @@ export default function ReturnOrderPage() {
         assginTo: filterAssign !== "all" ? filterAssign : undefined,
         product: filterProduct !== "all" ? filterProduct : undefined
       });
-      const mapped = res.data.map((r: any) => ({
+      // fetchReturnOrders returns raw axios response; backend returns { data: [...] } or array
+      const rawData = res?.data?.data ?? res?.data ?? [];
+      const list = Array.isArray(rawData) ? rawData : [];
+      const mapped = list.map((r: any) => ({
         id: r._id || r.id,
         customerName: r.customerName,
         phone_number: r.phone_number,
         assginTo: r.assginTo?.name || r.assginTo || "",
+        assginToId: r.assginTo?._id || r.assginTo?.id || r.assginTo || "",
         orderDate: r.orderId?.createdAt ? (() => {
           const d = new Date(r.orderId.createdAt);
           const day = String(d.getDate()).padStart(2, '0');
@@ -77,7 +84,8 @@ export default function ReturnOrderPage() {
         amount: r.amount || 0,
         quantity: r.products?.reduce((acc: number, curr: any) => acc + curr.quantity, 0) || 0,
         subtotal: r.amount || 0,
-        type: r.type || "RTO"
+        type: r.type || "RTO",
+        _products: r.products || []
       }));
       setReturnOrders(mapped);
     } catch(err) { console.error(err); }
@@ -153,19 +161,27 @@ export default function ReturnOrderPage() {
     if(!customer || selectedProducts.length === 0) return toast.error("Please fill customer and add products");
     if (phone.length !== 10) return toast.error("Phone number must be exactly 10 digits!");
     try {
-      await createReturnOrderApi({
+      const payload = {
         customerName: customer,
         phone_number: phone,
         type: type || "RTO",
         assginTo: assign || undefined,
         amount: convertTotalAmount,
         products: selectedProducts
-      });
-      toast.success("Return Order created successfully");
+      };
+      
+      if (activeOrder) {
+         await updateReturnOrderApi(activeOrder.id, payload);
+         toast.success("Return Order updated successfully");
+      } else {
+         await createReturnOrderApi(payload);
+         toast.success("Return Order created successfully");
+      }
       setAddOpen(false);
       loadReturnOrdersData();
       setCustomer(""); setPhone(""); setSelectedProducts([]);
-    } catch(err: any) { toast.error("Failed to create return order"); }
+      setActiveOrder(null);
+    } catch(err: any) { toast.error(activeOrder ? "Failed to update return order" : "Failed to create return order"); }
   };
 
   const handleDelete = async (id: string) => {
@@ -176,9 +192,59 @@ export default function ReturnOrderPage() {
     setIsDeleting(null);
   };
 
-  const handleOpenView = (order: ReturnOrder) => {
-    setActiveOrder(order);
-    setViewOpen(true);
+  const handleOpenEdit = async (order: ReturnOrder) => {
+    try {
+      let payload: any = {};
+      try {
+        const res = await fetchReturnOrderById(order.id);
+        payload = res?.data?.data || res?.data || {};
+      } catch (err: any) {
+        if (err.response?.status === 404) {
+          // Fallback to row data if the backend GET route does not exist
+          payload = {
+            customerName: order.customerName,
+            phone_number: order.phone_number,
+            type: order.type,
+            assginTo: order.assginToId,
+            products: order._products || []
+          };
+        } else {
+          throw err;
+        }
+      }
+      
+      setCustomer(payload.customerName || order.customerName || "");
+      setPhone(payload.phone_number || order.phone_number || "");
+      setType(payload.type || order.type || "RTO");
+      setAssign(payload.assginTo?._id || payload.assginTo?.id || payload.assginTo || "");
+      
+      if (payload.products && Array.isArray(payload.products)) {
+        setSelectedProducts(payload.products.map((p: any) => ({
+          productId: p.productId?._id || p.productId || p._id || p.id,
+          name: p.name || p.productId?.name,
+          amount: p.amount,
+          quantity: p.quantity,
+          subtotal: p.subtotal || p.amount * p.quantity
+        })));
+      } else {
+        setSelectedProducts([]);
+      }
+      
+      setActiveOrder(order);
+      setAddOpen(true);
+    } catch(err) {
+      toast.error("Failed to fetch order details");
+    }
+  };
+
+  const openAddModal = () => {
+    setActiveOrder(null);
+    setCustomer("");
+    setPhone("");
+    setType("RTO");
+    setAssign("");
+    setSelectedProducts([]);
+    setAddOpen(true);
   };
 
   const filteredOrders = returnOrders;
@@ -201,7 +267,7 @@ export default function ReturnOrderPage() {
         <div className="flex items-center gap-1.5">
           {hasPermission("Return-order-edit") && (
             <button
-              onClick={() => handleOpenView(row)}
+              onClick={() => handleOpenEdit(row)}
               className="p-1.5 bg-primary-teal hover:bg-primary-teal text-white rounded-lg transition-all shadow-sm"
               title="Edit Return Order"
             >
@@ -254,7 +320,7 @@ export default function ReturnOrderPage() {
             <Button
               variant="primary"
               className="bg-teal-800 hover:bg-teal-700 focus:ring-teal-800 whitespace-nowrap"
-              onClick={() => setAddOpen(true)}
+              onClick={openAddModal}
             >
               Add Return<br />Order
             </Button>
@@ -320,8 +386,8 @@ export default function ReturnOrderPage() {
   />
       </div>
 
-      {/* Add Return Order Modal */}
-      <Modal isOpen={addOpen} onClose={() => setAddOpen(false)} title="Add Return Order" sizeClass="max-w-5xl">
+      {/* Add/Edit Return Order Modal */}
+      <Modal isOpen={addOpen} onClose={() => setAddOpen(false)} title={activeOrder ? "Edit Return Order" : "Add Return Order"} sizeClass="max-w-5xl">
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">

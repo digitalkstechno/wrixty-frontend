@@ -8,6 +8,7 @@ import { Button } from "../../components/common/Button";
 import { usePermission } from "../../utils/permissionUtils";
 import { fetchLeads, deleteLeadApi } from "../../services/leadService";
 
+
 export interface Reminder {
   id: string;
   title: string;
@@ -27,16 +28,19 @@ export default function ReminderListPage() {
   const [isFetchingData, setIsFetchingData] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toast = useToast();
 
-  const loadRemindersData = async (assigneeFilter?: string) => {
+  const loadRemindersData = async (assigneeFilter?: string, searchOverride?: string) => {
     setIsFetchingData(true);
     try {
+      const searchToUse = searchOverride !== undefined ? searchOverride : searchQuery;
       const res = await fetchLeads({
         page: 1,
         limit: 100,
-        assgin: assigneeFilter
+        assgin: assigneeFilter,
+        search: searchToUse || undefined
       });
       const data = res.data.filter((l: any) => l.reminder).map((l: any) => ({
         id: l._id || l.id,
@@ -144,7 +148,19 @@ export default function ReminderListPage() {
         </div>
 
         {/* Table Element */}
-        <Table data={reminders} columns={columns} selectable={false} isLoading={isFetchingData} />
+        <Table
+          data={reminders}
+          columns={columns}
+          selectable={false}
+          isLoading={isFetchingData}
+          searchable={true}
+          searchPlaceholder="Search reminders..."
+          onSearchChange={(val) => {
+            setSearchQuery(val);
+            // Table already debounces 400ms, then calls this
+            loadRemindersData(isAdmin ? undefined : (currentUser?._id || currentUser?.id), val);
+          }}
+        />
       </div>
     </div>
   );

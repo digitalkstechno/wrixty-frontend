@@ -74,7 +74,7 @@ export default function OrderListPage() {
         amount: o.amount || 0,
         quantity: o.quantity || 1,
         subtotal: o.amount || 0,
-        grandTotal: o.grandTotal || o.amount || 0,
+        grandTotal: o.grandTotal || o.subtotal || (o.products?.length ? o.products.reduce((acc: number, p: any) => acc + (p.subtotal || (p.amount * (p.quantity || 1)) || 0), 0) : (o.amount || 0)),
         date: o.createdAt ? (() => {
           const d = new Date(o.createdAt);
           const day = String(d.getDate()).padStart(2, '0');
