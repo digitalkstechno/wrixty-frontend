@@ -21,6 +21,8 @@ interface SelectProps {
   disabled?: boolean;
   placeholder?: string;
   name?: string;
+  required?: boolean;
+  allowCustom?: boolean;
 }
 
 export const Select: React.FC<SelectProps> = ({
@@ -35,6 +37,8 @@ export const Select: React.FC<SelectProps> = ({
   disabled,
   placeholder = "Select option",
   name,
+  required,
+  allowCustom = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -92,8 +96,8 @@ export const Select: React.FC<SelectProps> = ({
   return (
     <div className={`w-full flex flex-col gap-1.5 text-left ${className}`} ref={containerRef}>
       {label && (
-        <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-          {label}
+        <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex gap-1">
+          {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
       
@@ -112,8 +116,8 @@ export const Select: React.FC<SelectProps> = ({
             ${isDisabled ? "bg-background text-text-secondary cursor-not-allowed opacity-70" : "cursor-pointer"}
           `}
         >
-          <span className={`truncate ${!selectedOption ? "text-text-secondary/60" : ""}`}>
-            {selectedOption ? selectedOption.label : placeholder}
+          <span className={`truncate ${!selectedOption && !value ? "text-text-secondary/60" : ""}`}>
+            {selectedOption ? selectedOption.label : (value || placeholder)}
           </span>
           
           <div className="flex items-center gap-2">
@@ -175,6 +179,15 @@ export const Select: React.FC<SelectProps> = ({
                 <div className="px-4 py-8 text-center text-xs text-text-secondary italic">
                   No results found for "{searchQuery}"
                 </div>
+              )}
+              {allowCustom && searchQuery && !options.some(o => o.label.toLowerCase() === searchQuery.toLowerCase()) && (
+                <button
+                  type="button"
+                  onClick={() => handleSelect(searchQuery)}
+                  className="w-full text-left px-4 py-2.5 text-xs font-bold text-primary-teal hover:bg-primary-teal/10 transition-colors border-t border-border-ui/50"
+                >
+                  + Add "{searchQuery}"
+                </button>
               )}
             </div>
           </div>

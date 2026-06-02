@@ -119,13 +119,15 @@ export function Table<T extends Record<string, any>>({
 
   const handleSearchChange = (value: string) => {
     setInternalSearch(value);
-    if (serverSide) {
+    if (onSearchChange) {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
       searchTimeout.current = setTimeout(() => {
-        onSearchChange?.(value);
-        onPageChange?.(1, activeLimit);
+        onSearchChange(value);
+        if (serverSide && onPageChange) onPageChange(1, activeLimit);
       }, 400);
-    } else {
+    }
+    
+    if (!serverSide) {
       setInternalPage(1);
     }
   };

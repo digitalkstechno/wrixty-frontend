@@ -33,9 +33,9 @@ export const Input: React.FC<InputProps> = ({
       {label && (
         <label
           htmlFor={inputId}
-          className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider"
+          className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider flex gap-1"
         >
-          {label}
+          {label} {props.required && <span className="text-red-500">*</span>}
         </label>
       )}
       <div className="relative flex items-center">

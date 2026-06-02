@@ -188,7 +188,7 @@ export default function DashboardPage() {
             👥 Staff Performance Matrix
           </h4>
           <div className="bg-card-bg p-6 border border-border-ui rounded-lg shadow-soft">
-            <Table data={staffStats} columns={staffColumns} searchable={false} />
+            <Table data={staffStats} columns={staffColumns} searchable={false} idField="name" />
           </div>
         </div>
 
@@ -198,7 +198,7 @@ export default function DashboardPage() {
             📦 Best Selling Products
           </h4>
           <div className="bg-card-bg p-6 border border-border-ui rounded-lg shadow-soft">
-            <Table data={bestSellers} columns={productColumns} searchable={false} />
+            <Table data={bestSellers} columns={productColumns} searchable={false} idField="name" />
           </div>
         </div>
       </div>

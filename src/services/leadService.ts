@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut, apiDelete, endPointApi } from './api';
+import { apiGet, apiGetById, apiPost, apiPut, apiDelete, endPointApi } from './api';
 
 export interface Lead {
   _id?: string;
@@ -38,6 +38,12 @@ export interface FetchParams {
 // GET /api/leads
 export const fetchLeads = async (params?: FetchParams): Promise<PaginatedResponse<Lead>> => {
   const { data } = await apiGet(endPointApi.leads, params);
+  return data;
+};
+
+// GET /api/leads/:id
+export const fetchLeadById = async (id: string): Promise<Lead> => {
+  const { data } = await apiGetById(endPointApi.leads, id);
   return data;
 };
 

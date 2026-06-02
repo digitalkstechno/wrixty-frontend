@@ -235,6 +235,8 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                       {hasPermission("Product-list") && renderSubLink("Product", "/product")}
                       {hasPermission("Return-order-type-list") && renderSubLink("Return Order Type", "/return-order-type")}
                       {hasPermission("Reason-to-call-list") && renderSubLink("Reason to Call", "/reason-to-call")}
+                      {/* Customer Master currently uses Status-list permission as a placeholder, adjust if a new permission exists */}
+                      {hasPermission("Status-list") && renderSubLink("Customer", "/customer")}
                     </div>
                   )}
                 </div>
@@ -320,6 +322,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                           {hasPermission("Product-list") && renderSubLink("Product", "/product")}
                           {hasPermission("Return-order-type-list") && renderSubLink("Return Order Type", "/return-order-type")}
                           {hasPermission("Reason-to-call-list") && renderSubLink("Reason to Call", "/reason-to-call")}
+                          {hasPermission("Status-list") && renderSubLink("Customer", "/customer")}
                         </div>
                       )}
                     </div>

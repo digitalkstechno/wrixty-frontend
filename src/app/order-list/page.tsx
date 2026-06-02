@@ -13,6 +13,7 @@ import { fetchProducts } from "../../services/productService";
 import { fetchUsers } from "../../services/userService";
 import { fetchOrders, createOrderApi, updateOrderApi, deleteOrderApi } from "../../services/orderService";
 import { usePermission } from "../../utils/permissionUtils";
+import { fetchCouriers } from "../../services/courierService";
 
 export interface Order {
   id: string;
@@ -46,50 +47,64 @@ export default function OrderListPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [couriers, setCouriers] = useState<any[]>([
-    { id: "1", name: "Delhivery" },
-    { id: "2", name: "BlueDart" },
-    { id: "3", name: "XpressBees" },
-    { id: "4", name: "DHL Express" }
-  ]);
+  const [couriers, setCouriers] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const loadOrdersData = async (searchOverride?: string) => {
+    try {
+      setIsFetchingData(true);
+      const searchToUse = searchOverride !== undefined ? searchOverride : searchQuery;
+      const ordersRes = await fetchOrders({ 
+        page: 1, 
+        limit: 100,
+        search: searchToUse || undefined,
+        product: filterProduct !== 'all' ? filterProduct : undefined,
+        assginTo: filterAssignee !== 'all' ? filterAssignee : undefined,
+        courier: filterCourier !== 'all' ? filterCourier : undefined
+      });
+      // Map backend orders to frontend format
+      const mapped = ordersRes.data.map((o: any) => ({
+        id: o._id || o.id,
+        leadId: o.leadId?._id || o.leadId || "",
+        name: o.name,
+        phone_number: o.phone_number,
+        product: o.product || (o.products?.map((p: any) => p.name).join(", ") || ""),
+        amount: o.amount || 0,
+        quantity: o.quantity || 1,
+        subtotal: o.amount || 0,
+        grandTotal: o.grandTotal || o.amount || 0,
+        date: o.createdAt ? new Date(o.createdAt).toISOString().split('T')[0] : "",
+        paymentType: o.paymentType || "COD",
+        courier: o.courier || "",
+        assginTo: o.assginTo?.name || o.assginTo || "",
+        transactionId: o.transactionId || "",
+        status: o.status || "Dispatched"
+      }));
+      setOrders(mapped);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsFetchingData(false);
+    }
+  };
 
   React.useEffect(() => {
     const loadMasterData = async () => {
       try {
-        setIsFetchingData(true);
-        const [usersRes, prodsRes, ordersRes] = await Promise.all([
+        const [usersRes, prodsRes, couriersRes] = await Promise.all([
           fetchUsers({ page: 1, limit: 100 }),
           fetchProducts({ page: 1, limit: 100 }),
-          fetchOrders({ page: 1, limit: 100 })
+          fetchCouriers({ page: 1, limit: 100 })
         ]);
         setUsers(usersRes.data);
         setProducts(prodsRes.data);
-        // Map backend orders to frontend format
-        const mapped = ordersRes.data.map((o: any) => ({
-          id: o._id || o.id,
-          leadId: o.leadId?._id || o.leadId || "",
-          name: o.name,
-          phone_number: o.phone_number,
-          product: o.product || (o.products?.map((p: any) => p.name).join(", ") || ""),
-          amount: o.amount || 0,
-          quantity: o.quantity || 1,
-          subtotal: o.amount || 0,
-          grandTotal: o.grandTotal || o.amount || 0,
-          date: o.createdAt ? new Date(o.createdAt).toISOString().split('T')[0] : "",
-          paymentType: o.paymentType || "COD",
-          courier: o.courier || "",
-          assginTo: o.assginTo?.name || o.assginTo || "",
-          transactionId: o.transactionId || "",
-          status: o.status || "Dispatched"
-        }));
-        setOrders(mapped);
+        if (couriersRes?.data) setCouriers(couriersRes.data);
       } catch (err) {
         console.error(err);
-      } finally {
-        setIsFetchingData(false);
       }
     };
     loadMasterData();
+    loadOrdersData();
   }, []);
 
   const deleteOrder = async (id: string) => {
@@ -152,11 +167,8 @@ export default function OrderListPage() {
   const [isDeletingOrder, setIsDeletingOrder] = useState(false);
 
   const filteredOrders = React.useMemo(() => {
-    return orders
-      .filter(o => filterProduct === "all" || o.product === filterProduct)
-      .filter(o => filterAssignee === "all" || o.assginTo === filterAssignee)
-      .filter(o => filterCourier === "all" || o.courier === filterCourier);
-  }, [orders, filterProduct, filterAssignee, filterCourier]);
+    return orders;
+  }, [orders]);
 
   // Handle adding product to modal table
   const handleAddProduct = () => {
@@ -528,22 +540,36 @@ export default function OrderListPage() {
             />
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button
-              variant="primary"
-              className="rounded-lg px-6"
-            >
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" className="bg-primary-teal hover:bg-primary-teal/90" onClick={() => loadOrdersData()}>
               Apply Filter
             </Button>
-            <Button
-              variant="outline"
-              className="rounded-lg px-6"
-              onClick={() => {
-                setFilterProduct("all");
-                setFilterAssignee("all");
-                setFilterCourier("all");
-              }}
-            >
+            <Button variant="danger" className="bg-error hover:bg-error/90" onClick={() => {
+              setFilterProduct("all");
+              setFilterAssignee("all");
+              setFilterCourier("all");
+              setSearchQuery("");
+              fetchOrders({ page: 1, limit: 100 }).then(res => {
+                 const mapped = res.data.map((o: any) => ({
+                    id: o._id || o.id,
+                    leadId: o.leadId?._id || o.leadId || "",
+                    name: o.name,
+                    phone_number: o.phone_number,
+                    product: o.product || (o.products?.map((p: any) => p.name).join(", ") || ""),
+                    amount: o.amount || 0,
+                    quantity: o.quantity || 1,
+                    subtotal: o.amount || 0,
+                    grandTotal: o.grandTotal || o.amount || 0,
+                    date: o.createdAt ? new Date(o.createdAt).toISOString().split('T')[0] : "",
+                    paymentType: o.paymentType || "COD",
+                    courier: o.courier || "",
+                    assginTo: o.assginTo?.name || o.assginTo || "",
+                    transactionId: o.transactionId || "",
+                    status: o.status || "Dispatched"
+                  }));
+                  setOrders(mapped);
+              });
+            }}>
               Clear Filter
             </Button>
             <Button
@@ -556,7 +582,17 @@ export default function OrderListPage() {
         </div>
 
         {/* Table database */}
-        <Table data={filteredOrders} columns={columns} selectable isLoading={isFetchingData} />
+        <Table 
+           data={filteredOrders} 
+           columns={columns} 
+           selectable 
+           isLoading={isFetchingData} 
+           searchable={true}
+           onSearchChange={(val) => {
+             setSearchQuery(val);
+             loadOrdersData(val);
+           }}
+        />
       </div>
 
       {/* Edit Order Modal */}

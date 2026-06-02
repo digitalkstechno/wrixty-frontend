@@ -8,6 +8,7 @@ import { fetchStatuses } from "../../services/statusService";
 import { fetchLeads, updateLeadApi, deleteLeadApi } from "../../services/leadService";
 import { createOrderApi } from "../../services/orderService";
 import { fetchReasonToCalls } from "../../services/reasonToCallService";
+import { fetchCouriers } from "../../services/courierService";
 
 export interface Lead {
   id: string;
@@ -55,22 +56,23 @@ export default function LeadListPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [statuses, setStatuses] = useState<any[]>([]);
-  const [couriers] = useState<any[]>([
-    { id: "1", name: "Delhivery" },
-    { id: "2", name: "BlueDart" },
-    { id: "3", name: "XpressBees" },
-    { id: "4", name: "DHL Express" }
-  ]);
+  const [couriers, setCouriers] = useState<any[]>([]);
   const [reasonsOptions, setReasonsOptions] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const loadLeadsData = async () => {
+  const loadLeadsData = async (overrideAssignee?: string, overrideSearch?: string) => {
     setIsFetchingData(true);
     try {
+      const assigneeFilter = overrideAssignee === 'all' ? undefined : (overrideAssignee || (filterAssignee !== 'all' ? filterAssignee : undefined));
+      const searchToUse = overrideSearch !== undefined ? overrideSearch : searchQuery;
       const leadsRes = await fetchLeads({
         page: 1,
         limit: 100,
+        search: searchToUse || undefined,
         product: filterProduct !== 'all' ? filterProduct : undefined,
-        assgin: filterAssignee !== 'all' ? filterAssignee : undefined,
+        assgin: assigneeFilter,
         status: filterStatus !== 'all' ? filterStatus : undefined,
         reason_call: filterReason !== 'all' ? filterReason : undefined
       });
@@ -106,22 +108,39 @@ export default function LeadListPage() {
   React.useEffect(() => {
     const loadMasterData = async () => {
       try {
-        const [usersRes, prodsRes, statusRes, reasonRes] = await Promise.all([
+        const [usersRes, prodsRes, statusRes, reasonRes, couriersRes] = await Promise.all([
           fetchUsers({ page: 1, limit: 100 }),
           fetchProducts({ page: 1, limit: 100 }),
           fetchStatuses({ page: 1, limit: 100 }),
-          fetchReasonToCalls({ page: 1, limit: 100 })
+          fetchReasonToCalls({ page: 1, limit: 100 }),
+          fetchCouriers({ page: 1, limit: 100 })
         ]);
         setUsers(usersRes.data);
         setProducts(prodsRes.data);
         setStatuses(statusRes.data);
         setReasonsOptions(reasonRes.data);
+        if (couriersRes?.data) setCouriers(couriersRes.data);
       } catch (err) {
         console.error("Error loading master data", err);
       }
     };
+    const userStr = localStorage.getItem("wrixty_authenticated_user");
+    let initialAssigneeFilter = "all";
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setCurrentUser(user);
+        const admin = user?.roles?.some((r: string) => r.toLowerCase().includes('admin'));
+        setIsAdmin(admin);
+        if (!admin) {
+          initialAssigneeFilter = user._id || user.id;
+          setFilterAssignee(initialAssigneeFilter);
+        }
+      } catch (e) { }
+    }
+
     loadMasterData();
-    loadLeadsData();
+    loadLeadsData(initialAssigneeFilter);
   }, []);
 
   const updateLead = async (id: string, updated: Partial<Lead>) => {
@@ -137,6 +156,8 @@ export default function LeadListPage() {
         }
         return l;
       }));
+      toast.success("Lead updated successfully!");
+      loadLeadsData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update lead");
     }
@@ -156,7 +177,7 @@ export default function LeadListPage() {
   const router = useRouter();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  
+
   const [leadFormModalOpen, setLeadFormModalOpen] = useState(false);
   const [convertModalOpen, setConvertModalOpen] = useState(false);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
@@ -221,7 +242,7 @@ export default function LeadListPage() {
     setPaymentType("COD");
     setSelectedCourier(couriers[0]?.name || "Delhivery");
     setTransactionId("");
-    
+
     if ((lead as any).products && Array.isArray((lead as any).products)) {
       setConvertSelectedProducts((lead as any).products.map((p: any) => ({
         productId: p.productId || p._id,
@@ -251,12 +272,12 @@ export default function LeadListPage() {
     } else {
       setConvertSelectedProducts([
         ...convertSelectedProducts,
-        { 
-          productId: prod._id || prod.id, 
-          name: prod.name, 
-          amount: prod.amount, 
-          quantity: 1, 
-          subtotal: prod.amount 
+        {
+          productId: prod._id || prod.id,
+          name: prod.name,
+          amount: prod.amount,
+          quantity: 1,
+          subtotal: prod.amount
         }
       ]);
       toast.success("Product added!");
@@ -283,7 +304,7 @@ export default function LeadListPage() {
       toast.warning("Please add at least one product to convert to order!");
       return;
     }
-    
+
     setIsConvertingLead(true);
     try {
       await createOrderApi({
@@ -324,18 +345,17 @@ export default function LeadListPage() {
       render: (val, row) => {
         return (
           <select
-            value={val}
+            value={(row as any).statusId || val || ""}
             onChange={(e) => updateLead(row.id, { status: e.target.value as string })}
-            className={`text-[11px] font-bold rounded-lg px-2 py-1 outline-none border cursor-pointer appearance-none transition-all ${
-              val === "Inprogress" || val === "In-Progress"
+            className={`text-[11px] font-bold rounded-lg px-2 py-1 outline-none border cursor-pointer appearance-none transition-all ${val === "Inprogress" || val === "In-Progress"
                 ? "bg-success/10 text-success border-success/20"
                 : val === "Close" || val === "Closed"
-                ? "bg-error/10 text-error border-error/20"
-                : "bg-warning/10 text-warning border-warning/20"
-            }`}
+                  ? "bg-error/10 text-error border-error/20"
+                  : "bg-warning/10 text-warning border-warning/20"
+              }`}
           >
             {statuses.map(s => (
-              <option key={s.id} value={s.name}>{s.name}</option>
+              <option key={s.id} value={s._id || s.id}>{s.name}</option>
             ))}
           </select>
         );
@@ -431,7 +451,7 @@ export default function LeadListPage() {
         statusesOptions={statuses}
         reasonCallOptions={reasonsOptions}
       />
-      
+
       <div className="space-y-6">
         <div className="flex items-center justify-between pb-6">
           <h2 className="text-2xl font-bold text-text-primary">
@@ -468,9 +488,13 @@ export default function LeadListPage() {
             <Select
               value={filterAssignee}
               onChange={(e) => setFilterAssignee(e.target.value)}
+              disabled={!isAdmin}
               options={[
                 { value: "all", label: "Select Assign" },
-                ...users.map(u => ({ value: u._id || u.id, label: u.name }))
+                ...(isAdmin
+                  ? users
+                  : users.filter(u => u._id === currentUser?._id || u.id === currentUser?._id)
+                ).map(u => ({ value: u._id || u.id, label: u.name }))
               ]}
             />
           </div>
@@ -494,7 +518,7 @@ export default function LeadListPage() {
               ]}
             />
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="primary"
@@ -508,10 +532,10 @@ export default function LeadListPage() {
               className="rounded-lg"
               onClick={() => {
                 setFilterProduct("all");
-                setFilterAssignee("all");
+                if (isAdmin) setFilterAssignee("all");
                 setFilterStatus("all");
                 setFilterReason("all");
-                setTimeout(() => loadLeadsData(), 0);
+                setTimeout(() => loadLeadsData(isAdmin ? "all" : (currentUser?._id || currentUser?.id)), 0);
               }}
             >
               Clear Filter
@@ -562,44 +586,50 @@ export default function LeadListPage() {
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
           isLoading={isFetchingData}
+          searchable={true}
+          onSearchChange={(val) => {
+            setSearchQuery(val);
+            loadLeadsData(undefined, val);
+          }}
         />
       </div>
 
-      <Modal isOpen={convertModalOpen} onClose={() => setConvertModalOpen(false)} title="Lead Convert To Order()" isLoading={isConvertingLead}>
-        <form onSubmit={handleConvertSubmit} className="space-y-6 text-left max-w-4xl mx-auto">
-          
+      <Modal isOpen={convertModalOpen} onClose={() => setConvertModalOpen(false)} title="Lead Convert To Order" sizeClass="max-w-4xl" isLoading={isConvertingLead} >
+        <form onSubmit={handleConvertSubmit} className="space-y-4">
+
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-zinc-700">Payment Type</label>
+            <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Payment Type</label>
             <div className="flex items-center gap-6">
-              <label className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
-                <input type="radio" name="paymentType" value="COD" checked={paymentType === 'COD'} onChange={() => setPaymentType('COD')} className="w-4 h-4 text-primary-teal" />
+              <label className="flex items-center gap-2 text-sm text-zinc-650 cursor-pointer">
+                <input type="radio" name="paymentType" value="COD" checked={paymentType === 'COD'} onChange={() => setPaymentType('COD')} className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
                 COD Discount
               </label>
-              <label className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
-                <input type="radio" name="paymentType" value="Prepaid" checked={paymentType === 'Prepaid'} onChange={() => setPaymentType('Prepaid')} className="w-4 h-4 text-primary-teal" />
+              <label className="flex items-center gap-2 text-sm text-zinc-650 cursor-pointer">
+                <input type="radio" name="paymentType" value="Prepaid" checked={paymentType === 'Prepaid'} onChange={() => setPaymentType('Prepaid')} className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
                 Prepaid Discount
               </label>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Transaction ID"
-              value={transactionId}
+              value={transactionId || ""}
               onChange={(e) => setTransactionId(e.target.value)}
-              placeholder="Enter Transaction ID"
+              placeholder="e.g. TXN12345"
+              required={paymentType === 'Prepaid'}
             />
             <Select
               label="Select Courier"
               value={selectedCourier}
               onChange={(e) => setSelectedCourier(e.target.value)}
-              options={couriers.map(c => ({ value: c.name, label: c.name }))}
+              options={[{ value: "", label: "Select Courier" }, ...couriers.map(c => ({ value: c.name, label: c.name }))]}
             />
           </div>
 
-          <div className="border-t border-zinc-150 pt-4 space-y-3">
-            <h4 className="text-sm font-medium text-zinc-700">Select Products</h4>
-            <div className="flex gap-2.5 items-end">
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-zinc-700 uppercase tracking-wider">Select Products</h4>
+            <div className="flex gap-2 items-center">
               <div className="flex-1">
                 <Select
                   value={currentSelectedProductId}
@@ -616,47 +646,40 @@ export default function LeadListPage() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-zinc-700">Selected Products</h4>
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-zinc-700 uppercase tracking-wider">Selected Products</h4>
             <div className="border border-zinc-200 rounded-lg overflow-hidden">
-              <table className="w-full text-left border-collapse text-sm">
+              <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-zinc-50 border-b border-zinc-200 font-semibold text-zinc-600">
+                  <tr className="bg-zinc-50 border-b border-zinc-200 font-semibold text-zinc-500">
                     <th className="p-3">Product Name</th>
                     <th className="p-3">Amount</th>
                     <th className="p-3">Quantity</th>
                     <th className="p-3">Subtotal</th>
-                    <th className="p-3 text-center">Action</th>
+                    <th className="p-3">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-150">
                   {convertSelectedProducts.length > 0 ? (
                     convertSelectedProducts.map((row) => (
                       <tr key={row.productId}>
-                        <td className="p-3 font-medium text-zinc-700">{row.name}</td>
-                        <td className="p-3 text-zinc-600">{row.amount}</td>
-                        <td className="p-3 w-32">
+                        <td className="p-3 font-medium text-zinc-800">{row.name}</td>
+                        <td className="p-3 font-medium text-zinc-700">{row.amount}</td>
+                        <td className="p-3 w-28">
                           <input
                             type="number"
                             min="1"
                             value={row.quantity}
                             onChange={(e) => handleConvertQtyChange(row.productId, Number(e.target.value))}
-                            className="w-full px-3 py-1.5 bg-white border border-zinc-200 rounded-md focus:ring-1 focus:ring-primary-teal outline-none"
+                            className="w-16 px-2 py-1 bg-white border border-zinc-200 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none"
                           />
                         </td>
+                        <td className="p-3 font-medium text-zinc-800">{row.subtotal}</td>
                         <td className="p-3">
-                          <input 
-                            type="text" 
-                            disabled 
-                            value={row.subtotal} 
-                            className="w-full px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-md outline-none" 
-                          />
-                        </td>
-                        <td className="p-3 text-center">
                           <button
                             type="button"
                             onClick={() => handleConvertRemoveProduct(row.productId)}
-                            className="px-4 py-1.5 bg-[#d32f2f] text-white text-xs font-semibold rounded-md hover:bg-red-700 transition-colors"
+                            className="py-1 px-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg shadow-sm text-[10px] transition-all"
                           >
                             Remove
                           </button>
@@ -665,7 +688,7 @@ export default function LeadListPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="p-4 text-center text-zinc-400 font-medium">
+                      <td colSpan={5} className="p-6 text-center text-zinc-400 font-medium text-sm border-t-2 border-orange-500/30 bg-orange-50/20">
                         No products selected
                       </td>
                     </tr>
@@ -675,34 +698,44 @@ export default function LeadListPage() {
             </div>
           </div>
 
-          <div className="border-t border-zinc-200 pt-4 mt-2">
-            <div className="flex justify-end mb-4">
-              <span className="text-lg text-zinc-700">
-                Total Amount: {convertTotalAmount.toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-end gap-3">
-              <button 
-                type="button" 
-                onClick={() => setConvertModalOpen(false)}
-                className="px-6 py-2 bg-[#b77051] text-white font-medium rounded-md hover:bg-[#a66245] transition-colors"
-              >
-                Close
-              </button>
-              <button 
-                type="submit" 
-                className="px-6 py-2 bg-[#335c5c] text-white font-medium rounded-md hover:bg-[#284a4a] transition-colors"
-              >
-                Save Changes
-              </button>
-            </div>
+          <div className="flex items-center justify-end gap-4 border-t border-zinc-150 pt-4 mt-2">
+            <span className="text-sm font-semibold text-zinc-700 mr-auto">
+              Total Amount: {convertTotalAmount.toFixed(2)}
+            </span>
+            <Button
+              type="button"
+              variant="danger"
+              className="bg-[#c2624c] hover:bg-[#b0523d] focus:ring-[#c2624c]"
+              onClick={() => setConvertModalOpen(false)}
+              disabled={isConvertingLead}
+            >
+              Close
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              className="bg-teal-800 hover:bg-teal-700 focus:ring-teal-800"
+              isLoading={isConvertingLead}
+            >
+              Save Changes
+            </Button>
           </div>
         </form>
       </Modal>
 
       <Modal isOpen={noteModalOpen} onClose={() => setNoteModalOpen(false)} title="Lead Note">
         <form onSubmit={handleSaveNote} className="space-y-4">
-          <Input label="Add Note" value={noteText} onChange={(e) => setNoteText(e.target.value)} />
+          <div className="w-full flex flex-col gap-1.5 text-left">
+            <label className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
+              Add Note
+            </label>
+            <textarea
+              className="w-full px-4 py-2.5 text-sm bg-card-bg border border-border-ui text-text-primary rounded-lg transition-all duration-200 outline-none focus:border-primary-teal focus:ring-1 focus:ring-primary-teal/30 placeholder:text-text-secondary/50 min-h-[100px] resize-y"
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Enter your note here..."
+            />
+          </div>
           <Button
             type="submit"
             variant="primary"
@@ -710,6 +743,15 @@ export default function LeadListPage() {
           >
             Save Note
           </Button>
+          {activeLead?.note && (
+            <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-lg mt-4">
+              <div className="flex justify-between items-center text-xs text-zinc-500 mb-2">
+                <span>{activeLead.date}</span>
+                <button type="button" onClick={() => { updateLead(activeLead.id, { note: "" }); setNoteText(""); }} className="p-1.5 hover:bg-zinc-200 rounded-md text-red-500 hover:text-red-600"><FiTrash2 className="w-4 h-4" /></button>
+              </div>
+              <p className="text-sm text-zinc-800 whitespace-pre-wrap">{activeLead.note}</p>
+            </div>
+          )}
         </form>
       </Modal>
     </div>

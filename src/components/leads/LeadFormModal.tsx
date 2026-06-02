@@ -4,8 +4,9 @@ import { Input } from "../common/Input";
 import { Select } from "../common/Select";
 import { Button } from "../common/Button";
 import { Delete } from "@mui/icons-material";
-import { createLeadApi, updateLeadApi } from "../../services/leadService";
+import { createLeadApi, updateLeadApi, fetchLeadById } from "../../services/leadService";
 import { createOrderApi } from "../../services/orderService";
+import { fetchCouriers } from "../../services/courierService";
 import { useToast } from "../../context/ToastContext";
 
 interface SelectedProductRow {
@@ -54,41 +55,72 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   const [modalSelectedProducts, setModalSelectedProducts] = useState<SelectedProductRow[]>([]);
   const [currentSelectedProductId, setCurrentSelectedProductId] = useState("");
 
-  // Convert to Order fields
   const [paymentType, setPaymentType] = useState<"COD" | "Prepaid">("COD");
   const [selectedCourier, setSelectedCourier] = useState("Delhivery");
   const [transactionId, setTransactionId] = useState("");
-  const [couriers] = useState<any[]>([
-    { id: "1", name: "Delhivery" },
-    { id: "2", name: "BlueDart" },
-    { id: "3", name: "XpressBees" },
-    { id: "4", name: "DHL Express" }
-  ]);
+  const [couriers, setCouriers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    fetchCouriers({ limit: 100, page: 1 }).then(res => {
+      if (res && res.data) setCouriers(res.data);
+    }).catch(err => console.error(err));
+
+    import("../../services/customerService").then(mod => {
+      mod.fetchCustomers().then(res => {
+        if (res && res.data) setCustomers(res.data);
+      });
+    });
+
+    const userStr = localStorage.getItem("wrixty_authenticated_user");
+    if (userStr) {
+      try {
+        setCurrentUser(JSON.parse(userStr));
+      } catch(e) {}
+    }
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
       if (activeLead) {
         // Edit Mode
-        setName(activeLead.name || "");
-        setPhone(activeLead.phone_number || "");
-        setStatus(activeLead.statusId || activeLead.status || "");
-        setStatusTwo(activeLead.reasonCallId || activeLead.reason_call || "");
-        setNoteText(activeLead.note || "");
-        setAssignee(activeLead.assginId || activeLead.assgin || "");
-        setReminder(activeLead.reminderDate || activeLead.reminder || "");
-        setOrderStatus(activeLead.orderStatus || false);
+        setIsLoading(true);
+        fetchLeadById(activeLead.id).then((res: any) => {
+          const fetchedData = res?.data || res;
+          setName(fetchedData.name || "");
+          setPhone(fetchedData.phone_number || "");
+          setStatus(fetchedData.statusId || fetchedData.status?._id || fetchedData.status || "");
+          setStatusTwo(fetchedData.reasonCallId || fetchedData.reason_call?._id || fetchedData.reason_call || "");
+          setNoteText(fetchedData.note || "");
+          setAssignee(fetchedData.assginId || fetchedData.assgin?._id || fetchedData.assgin || "");
+          setReminder(fetchedData.reminderDate || fetchedData.reminder || "");
+          const isOrder = Boolean(fetchedData.orderStatus) && fetchedData.orderStatus !== "false";
+          setOrderStatus(isOrder);
+          
+          if (isOrder) {
+            setPaymentType(fetchedData.paymentType || "COD");
+            setSelectedCourier(fetchedData.courier || "Delhivery");
+            setTransactionId(fetchedData.transactionId || "");
+          }
 
-        if (activeLead.products && Array.isArray(activeLead.products)) {
-          setModalSelectedProducts(activeLead.products.map((p: any) => ({
-            productId: p.productId || p._id,
-            name: p.name,
-            amount: p.amount,
-            quantity: p.quantity,
-            subtotal: p.subtotal || (p.amount * p.quantity)
-          })));
-        } else {
-          setModalSelectedProducts([]);
-        }
+          if (fetchedData.products && Array.isArray(fetchedData.products)) {
+            setModalSelectedProducts(fetchedData.products.map((p: any) => ({
+              productId: p.productId || p._id,
+              name: p.name,
+              amount: p.amount,
+              quantity: p.quantity,
+              subtotal: p.subtotal || (p.amount * p.quantity)
+            })));
+          } else {
+            setModalSelectedProducts([]);
+          }
+        }).catch(err => {
+          toast.error("Failed to fetch lead details");
+          console.error(err);
+        }).finally(() => {
+          setIsLoading(false);
+        });
       } else {
         // Add Mode
         setName("");
@@ -96,14 +128,28 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         setStatus(statusesOptions[0]?._id || statusesOptions[0]?.id || "");
         setStatusTwo(reasonCallOptions[0]?._id || reasonCallOptions[0]?.id || "");
         setNoteText("");
-        setAssignee(users[0]?._id || users[0]?.id || "");
         setReminder("");
         setOrderStatus(false);
+        setPaymentType("COD");
+        setSelectedCourier("Delhivery");
+        setTransactionId("");
         setModalSelectedProducts([]);
+        
+        // Handle Default Assignee
+        if (currentUser) {
+          const isAdmin = currentUser?.roles?.some((r: string) => r.toLowerCase().includes('admin'));
+          if (!isAdmin) {
+            setAssignee(currentUser._id || currentUser.id || "");
+          } else {
+            setAssignee(users[0]?._id || users[0]?.id || "");
+          }
+        } else {
+          setAssignee(users[0]?._id || users[0]?.id || "");
+        }
       }
       setCurrentSelectedProductId(products[0]?._id || products[0]?.id || "");
     }
-  }, [isOpen, activeLead, users, products, statusesOptions, reasonCallOptions]);
+  }, [isOpen, activeLead, users, products, statusesOptions, reasonCallOptions, currentUser]);
 
   const handleAddProduct = () => {
     if (!currentSelectedProductId) return;
@@ -149,6 +195,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name || !phone || !status || !statusTwo || !assignee) {
+      toast.warning("Please fill all compulsory fields (Name, Phone, Status, Reason Call, Assign Staff)!");
+      return;
+    }
     if (modalSelectedProducts.length === 0) {
       toast.warning("Please add at least one product!");
       return;
@@ -171,7 +221,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
       reason_call: statusTwo,
       note: noteText,
       reminder: reminder,
-      orderStatus: orderStatus
+      orderStatus: orderStatus,
+      paymentType: orderStatus ? paymentType : undefined,
+      courier: orderStatus ? selectedCourier : undefined,
+      transactionId: orderStatus ? transactionId : undefined
     };
 
     try {
@@ -217,12 +270,29 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         <p className="text-xs text-zinc-500 font-medium">Fill out the details to {activeLead ? 'update the' : 'register a new'} lead in the system.</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Enter Name" />
+          <div>
+            <Select 
+              label="Name" 
+              value={name} 
+              onChange={(e) => {
+                const selVal = e.target.value;
+                setName(selVal);
+                const selected = customers.find(c => c.name === selVal);
+                if (selected && selected.phone_number) {
+                  setPhone(selected.phone_number);
+                }
+              }} 
+              required
+              allowCustom={true}
+              options={customers.map(c => ({ value: c.name, label: c.name }))}
+            />
+          </div>
           <Input label="Phone Number" type="number" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="Enter Phone Number" />
           <Select
             label="Reason Call"
             value={statusTwo}
             onChange={(e) => setStatusTwo(e.target.value)}
+            required
             options={[
               { value: "", label: "Select Reason" },
               ...reasonCallOptions.map(r => ({ value: r._id || r.id, label: r.name }))
@@ -235,6 +305,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             label="Status"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
+            required
             options={[
               { value: "", label: "Select Status" },
               ...statusesOptions.map(s => ({ value: s._id || s.id, label: s.name }))
@@ -244,9 +315,13 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             label="Assign Staff"
             value={assignee}
             onChange={(e) => setAssignee(e.target.value)}
+            required
             options={[
               { value: "", label: "Select User" },
-              ...users.map(u => ({ value: u._id || u.id, label: u.name }))
+              ...(currentUser?.roles?.some((r: string) => r.toLowerCase().includes('admin'))
+                ? users
+                : users.filter(u => u._id === currentUser?._id || u.id === currentUser?._id)
+              ).map(u => ({ value: u._id || u.id, label: u.name }))
             ]}
           />
           <Input label="Note" value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Enter Note" />
@@ -265,17 +340,21 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
           <Input label="Reminder" type="date" value={reminder} onChange={(e) => setReminder(e.target.value)} />
         </div>
 
-        {orderStatus && !activeLead && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-zinc-50 rounded-lg border border-zinc-200">
-            <Select
-              label="Payment Type"
-              value={paymentType}
-              onChange={(e) => setPaymentType(e.target.value as "COD" | "Prepaid")}
-              options={[
-                { value: "COD", label: "Cash on Delivery (COD)" },
-                { value: "Prepaid", label: "Prepaid Online" }
-              ]}
-            />
+        {orderStatus && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-zinc-50 rounded-lg border border-zinc-200 items-center">
+            <div className="space-y-2">
+              <label className="text-[13px] font-semibold text-zinc-500 uppercase">Payment Type</label>
+              <div className="items-center gap-4">
+                <label className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer mt-1">
+                  <input type="radio" name="modalPaymentType" value="COD" checked={paymentType === 'COD'} onChange={(e) => setPaymentType(e.target.value as any)} className="w-4 h-4 text-primary-teal" />
+                  COD Discount
+                </label>
+                <label className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
+                  <input type="radio" name="modalPaymentType" value="Prepaid" checked={paymentType === 'Prepaid'} onChange={(e) => setPaymentType(e.target.value as any)} className="w-4 h-4 text-primary-teal" />
+                  Prepaid Discount
+                </label>
+              </div>
+            </div>
             <Select
               label="Courier Partner"
               value={selectedCourier}
