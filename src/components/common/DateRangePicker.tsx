@@ -225,7 +225,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ startDate, end
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 z-50 mt-2 bg-white rounded-lg shadow-xl border border-zinc-200 flex flex-col md:flex-row overflow-hidden max-w-[95vw] md:max-w-none md:min-w-max">
+        <div className="absolute right-0 z-50 mt-2 bg-white rounded-lg shadow-xl border border-zinc-200 flex flex-col md:flex-row overflow-hidden max-w-[95vw] md:max-w-none md:min-w-max">
           
           {/* Presets Sidebar */}
           <div className="w-full md:w-48 bg-zinc-50 border-r border-zinc-200 flex flex-col py-2">

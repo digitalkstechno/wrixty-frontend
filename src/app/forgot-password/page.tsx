@@ -84,8 +84,8 @@ export default function ForgotPasswordPage() {
           </form>
 
           {resetLink && (
-            <div className="p-4 bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-900 rounded-lg text-left space-y-2">
-              <p className="text-[11px] font-bold text-teal-800 dark:text-teal-400 uppercase tracking-wider">
+            <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg text-left space-y-2">
+              <p className="text-[11px] font-bold text-teal-800 uppercase tracking-wider">
                 Development Test Link:
               </p>
               <a 

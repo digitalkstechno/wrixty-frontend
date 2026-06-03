@@ -25,7 +25,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} sizeClass="max-w-md">
       <div className="space-y-6 text-center py-2">
-        <div className="w-16 h-16 bg-rose-50 dark:bg-rose-950/20 text-rose-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
+        <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
           <FiTrash2 className="w-8 h-8 text-rose-600" />
         </div>
         <div className="space-y-2">

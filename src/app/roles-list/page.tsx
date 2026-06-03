@@ -270,10 +270,10 @@ export default function RolesListPage() {
   };
 
   const renderPermissionsTable = () => (
-    <div className="mt-6 border border-zinc-250 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-950">
+    <div className="mt-6 border border-zinc-250 rounded-lg overflow-hidden bg-white">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-zinc-250 dark:border-zinc-800 font-semibold text-text-secondary bg-background/50">
+          <tr className="border-b border-zinc-250 font-semibold text-text-secondary bg-background/50">
             <th className="p-4 w-[180px]">
               <div className="flex items-center gap-2">
                 <input
@@ -288,7 +288,7 @@ export default function RolesListPage() {
             <th className="p-4">Permissions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+        <tbody className="divide-y divide-zinc-200">
           {MODULE_PERMISSIONS.map((mod, i) => (
             <tr key={i} className="hover:bg-background/80">
               <td className="p-4 font-semibold text-text-primary align-top">
@@ -326,12 +326,12 @@ export default function RolesListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-zinc-950 p-6 border border-zinc-200 dark:border-zinc-900 rounded-md shadow-sm space-y-6">
+      <div className="bg-white p-6 border border-zinc-200 rounded-md shadow-sm space-y-6">
 
         {/* Header Block */}
-        <div className="border-b border-zinc-100 dark:border-zinc-900 pb-4 space-y-3">
+        <div className="border-b border-zinc-100 pb-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">
+            <h2 className="text-xl font-bold text-zinc-800">
               Roles List
             </h2>
             {hasPermission("Roles-add") && (
@@ -349,14 +349,14 @@ export default function RolesListPage() {
           {/* Export Buttons */}
           <div className="flex items-center gap-1.5">
             <button onClick={() => handleExport('copy')} disabled={exportLoading}
-              className={`px-3 py-1 text-[10px] font-semibold rounded border transition-all disabled:opacity-50 ${copySuccess ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+              className={`px-3 py-1 text-[10px] font-semibold rounded border transition-all disabled:opacity-50 ${copySuccess ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
                 }`}>{copySuccess ? 'Copied!' : 'Copy'}</button>
             <button onClick={() => handleExport('excel')} disabled={exportLoading}
-              className="px-3 py-1 text-[10px] font-semibold rounded border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">Excel</button>
+              className="px-3 py-1 text-[10px] font-semibold rounded border bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-all disabled:opacity-50">Excel</button>
             <button onClick={() => handleExport('csv')} disabled={exportLoading}
-              className="px-3 py-1 text-[10px] font-semibold rounded border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">CSV</button>
+              className="px-3 py-1 text-[10px] font-semibold rounded border bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-all disabled:opacity-50">CSV</button>
             <button onClick={() => handleExport('pdf')} disabled={exportLoading}
-              className="px-3 py-1 text-[10px] font-semibold rounded border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">PDF</button>
+              className="px-3 py-1 text-[10px] font-semibold rounded border bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-all disabled:opacity-50">PDF</button>
             {exportLoading && <span className="text-[10px] text-zinc-400 ml-1">Exporting...</span>}
           </div>
         </div>
@@ -384,7 +384,7 @@ export default function RolesListPage() {
           {formErrors.name && <p className="text-rose-500 text-[11px] mt-1">{formErrors.name}</p>}
 
           <div className="flex items-center justify-between pt-4">
-            <h4 className="font-bold text-zinc-800 dark:text-zinc-200">Assign Permissions to Roles</h4>
+            <h4 className="font-bold text-zinc-800">Assign Permissions to Roles</h4>
             <button
               type="button"
               onClick={toggleAllPermissions}
@@ -414,7 +414,7 @@ export default function RolesListPage() {
           {formErrors.name && <p className="text-rose-500 text-[11px] mt-1">{formErrors.name}</p>}
 
           <div className="flex items-center justify-between pt-4">
-            <h4 className="font-bold text-zinc-800 dark:text-zinc-200">Assidsgn Permissions to Roles</h4>
+            <h4 className="font-bold text-zinc-800">Assidsgn Permissions to Roles</h4>
             <button
               type="button"
               onClick={toggleAllPermissions}
