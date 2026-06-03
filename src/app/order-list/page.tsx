@@ -7,7 +7,7 @@ import { Select } from "../../components/common/Select";
 import { Input } from "../../components/common/Input";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
-import { Close } from "@mui/icons-material";
+import { Close, CalendarToday } from "@mui/icons-material";
 import { FiEdit, FiTrash2, FiRefreshCcw } from "react-icons/fi";
 import { fetchProducts } from "../../services/productService";
 import { fetchUsers } from "../../services/userService";
@@ -533,8 +533,8 @@ export default function OrderListPage() {
             Order List
           </h2>
           <div className="flex items-center gap-4">
-            <span className="text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
-              📅 May 30, 2026 - May 30, 2026
+            <span className="flex items-center gap-2 text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
+              <CalendarToday className="w-4 h-4 text-text-secondary" /> May 30, 2026 - May 30, 2026
             </span>
           </div>
         </div>

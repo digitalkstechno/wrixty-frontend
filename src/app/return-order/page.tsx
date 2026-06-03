@@ -13,7 +13,7 @@ import { fetchUsers } from "../../services/userService";
 import { fetchProducts } from "../../services/productService";
 import { fetchOrders } from "../../services/orderService";
 import { fetchReturnOrders, createReturnOrderApi, deleteReturnOrderApi, fetchReturnOrderById, updateReturnOrderApi } from "../../services/returnOrderService";
-import { Close } from "@mui/icons-material";
+import { Close, CalendarToday } from "@mui/icons-material";
 
 export interface ReturnOrder {
   id: string;
@@ -304,14 +304,14 @@ export default function ReturnOrderPage() {
           <div className="flex flex-wrap items-center gap-6 flex-1 justify-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Order Date :</span>
-              <span className="text-xs font-semibold text-zinc-600 bg-zinc-50  px-3 py-1.5 rounded-lg border border-zinc-200/50 ">
-                📅 May 30, 2026 - May 30, 2026
+              <span className="flex items-center gap-2 text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
+                <CalendarToday className="w-4 h-4 text-text-secondary" /> May 30, 2026 - May 30, 2026
               </span>
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Return Order Date :</span>
-              <span className="text-xs font-semibold text-zinc-600 bg-zinc-50  px-3 py-1.5 rounded-lg border border-zinc-200/50 ">
-                📅 May 30, 2026 - May 30, 2026
+              <span className="flex items-center gap-2 text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
+                <CalendarToday className="w-4 h-4 text-text-secondary" /> May 30, 2026 - May 30, 2026
               </span>
             </div>
           </div>

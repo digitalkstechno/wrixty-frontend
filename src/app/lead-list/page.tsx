@@ -37,7 +37,7 @@ import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Select } from "../../components/common/Select";
 import { Button } from "../../components/common/Button";
-import { Add, SwapHoriz, Assignment } from "@mui/icons-material";
+import { Add, SwapHoriz, Assignment, ViewKanban, CalendarToday } from "@mui/icons-material";
 import { FiEdit, FiTrash2, FiFileText } from "react-icons/fi";
 import { LeadFormModal } from "../../components/leads/LeadFormModal";
 
@@ -502,9 +502,19 @@ export default function LeadListPage() {
             Lead List
           </h2>
           <div className="flex items-center gap-4">
-            <span className="text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
-              📅 May 30, 2026 - May 30, 2026
+            <span className="flex items-center gap-2 text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
+              <CalendarToday className="w-4 h-4 text-text-secondary" /> May 30, 2026 - May 30, 2026
             </span>
+            {hasPermission("Kanban-view") && (
+              <button
+                onClick={() => router.push("/kanban-list")}
+                className="p-2.5 bg-white border border-border-ui/50 text-text-secondary hover:text-primary-teal hover:border-primary-teal/50 rounded-lg transition-all shadow-sm flex items-center gap-2 font-bold text-sm"
+                title="View Kanban"
+              >
+                <ViewKanban className="w-5 h-5" />
+                <span>Kanban</span>
+              </button>
+            )}
             {hasPermission("Lead-add") && (
               <Button
                 onClick={() => { setActiveLead(null); setLeadFormModalOpen(true); }}

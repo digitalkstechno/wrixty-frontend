@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { fetchUsers } from "../../services/userService";
 import { fetchActivityLogs, ActivityLog } from "../../services/activityLogService";
+import { CalendarToday } from "@mui/icons-material";
 import { Table, Column } from "../../components/common/Table";
 import { Select } from "../../components/common/Select";
 import { Button } from "../../components/common/Button";
@@ -132,8 +133,8 @@ export default function ActivityLogPage() {
           </Button>
           
           <div className="flex items-center gap-3 ml-2">
-            <span className="text-sm font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui ">
-              📅 May 30, 2026 - May 30, 2526
+            <span className="flex items-center gap-2 text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
+              <CalendarToday className="w-4 h-4 text-text-secondary" /> May 30, 2026 - May 30, 2526
             </span>
           </div>
         </div>

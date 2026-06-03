@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { CalendarToday } from "@mui/icons-material";
 import { Table, Column } from "../../components/common/Table";
 import { FiTrash2 } from "react-icons/fi";
 import { useToast } from "../../context/ToastContext";
@@ -74,8 +75,8 @@ export default function TaskListPage() {
         
         {/* Date Range Top Right */}
         <div className="flex items-center justify-end pb-6">
-          <span className="text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
-            📅 May 30, 2026 - May 30, 2026
+          <span className="flex items-center gap-2 text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
+            <CalendarToday className="w-4 h-4 text-text-secondary" /> May 30, 2026 - May 30, 2026
           </span>
         </div>
 

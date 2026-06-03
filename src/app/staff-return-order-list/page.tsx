@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { CalendarToday } from "@mui/icons-material";
 import { Table, Column } from "../../components/common/Table";
 import { fetchStaffReturnStats } from "../../services/returnOrderService";
 
@@ -49,8 +50,8 @@ export default function StaffReturnOrderListPage() {
           <h2 className="text-xl font-bold text-zinc-800">
             Return Order Report List
           </h2>
-          <span className="text-xs font-semibold text-zinc-500 bg-zinc-100 px-3 py-2 rounded-lg border border-zinc-200/50">
-            📅 May 30, 2026 - May 30, 2026
+          <span className="flex items-center gap-2 text-xs font-semibold text-text-secondary bg-background px-4 py-2 rounded-lg border border-border-ui/50">
+            <CalendarToday className="w-4 h-4 text-text-secondary" /> May 30, 2026 - May 30, 2026
           </span>
         </div>
 
