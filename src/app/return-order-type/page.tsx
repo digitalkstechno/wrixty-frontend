@@ -160,7 +160,7 @@ export default function ReturnOrderTypePage() {
       <div className="space-y-6">
 
         {/* Header Block */}
-        <div className="pb-4">
+        <div className="flex items-center justify-between pb-4">
           <h2 className="text-xl font-bold text-zinc-800 ">Return Order Type List</h2>
           {hasPermission("Return-order-type-add") && (
             <Button onClick={() => { setName(""); setFormErrors({}); setModalOpen(true); }} variant="primary">Add Return Order Type</Button>

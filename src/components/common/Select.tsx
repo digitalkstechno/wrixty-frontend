@@ -41,6 +41,7 @@ export const Select: React.FC<SelectProps> = ({
   allowCustom = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpwards, setOpenUpwards] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +63,7 @@ export const Select: React.FC<SelectProps> = ({
     );
   }, [options, searchQuery]);
 
-  // Handle click outside to close dropdown
+  // Handle click outside to close dropdown and check position
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -72,6 +73,20 @@ export const Select: React.FC<SelectProps> = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Check if dropdown should open upwards
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      // If less than 250px below, open upwards
+      if (spaceBelow < 250 && rect.top > 250) {
+        setOpenUpwards(true);
+      } else {
+        setOpenUpwards(false);
+      }
+    }
+  }, [isOpen]);
 
   // Focus search input when dropdown opens
   useEffect(() => {
@@ -134,7 +149,7 @@ export const Select: React.FC<SelectProps> = ({
 
         {/* Dropdown Panel */}
         {isOpen && (
-          <div className="absolute z-50 w-full mt-1.5 bg-white border border-border-ui rounded-lg shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className={`absolute z-50 w-full bg-white border border-border-ui rounded-lg shadow-xl overflow-hidden animate-in fade-in duration-200 ${openUpwards ? "bottom-full mb-1.5 slide-in-from-bottom-2" : "top-full mt-1.5 slide-in-from-top-2"}`}>
             {/* Search Input */}
             <div className="p-2 border-b border-border-ui/50 flex items-center gap-2 bg-zinc-50/50">
               <Search className="text-text-secondary w-4 h-4" />
