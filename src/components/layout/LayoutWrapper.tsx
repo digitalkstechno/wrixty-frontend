@@ -42,12 +42,14 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
     name: string;
     email: string;
     avatar: string;
+    check_photo?: string;
     permissions?: Record<string, boolean>;
   } | null>(null);
   
   // Collapsible Submenu states
   const [teamOpen, setTeamOpen] = useState(false);
   const [masterOpen, setMasterOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Helper to check permission with Superadmin / Admin role & email bypass
   const hasPermission = (perm: string) => {
@@ -359,16 +361,45 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
               </div>
 
               {/* Exact Right Header User Info display matching screenshot */}
-              <div className="flex items-center gap-5">
-                <div className="flex items-center gap-3 p-1 group cursor-pointer">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-primary text-white font-bold text-xs flex items-center justify-center shadow-md transition-all duration-300 group-hover:scale-105 group-hover:rotate-3">
-                    {currentUser?.avatar || "A"}
-                  </div>
+              <div className="flex items-center gap-5 relative">
+                <div 
+                  className="flex items-center gap-3 p-1 group cursor-pointer"
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                >
+                  {currentUser?.check_photo ? (
+                    <img src={currentUser.check_photo} alt="Avatar" className="w-9 h-9 rounded-lg object-cover shadow-md transition-all duration-300 group-hover:scale-105 group-hover:rotate-3" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-gradient-primary text-white font-bold text-xs flex items-center justify-center shadow-md transition-all duration-300 group-hover:scale-105 group-hover:rotate-3">
+                      {currentUser?.avatar || "A"}
+                    </div>
+                  )}
                   <div className="flex flex-col text-left transition-all duration-200 group-hover:translate-x-0.5">
                     <span className="text-xs font-bold text-text-primary">{currentUser?.name || "Admin"}</span>
                     <span className="text-[10px] text-text-secondary font-semibold tracking-wide">{currentUser?.email || "superadmin@gmail.com"}</span>
                   </div>
                 </div>
+
+                {/* Profile Dropdown */}
+                {profileDropdownOpen && (
+                  <div className="absolute top-12 right-0 w-48 bg-card-bg border border-border-ui rounded-lg shadow-soft py-2 z-50 animate-fade-in">
+                    <Link 
+                      href="/profile-details" 
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-background text-sm text-text-primary font-medium transition-colors"
+                    >
+                      <Person className="w-4.5 h-4.5 text-text-secondary" />
+                      Account
+                    </Link>
+                    <div className="h-px bg-border-ui/50 my-1"></div>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-error/5 text-sm text-error font-medium transition-colors"
+                    >
+                      <Logout className="w-4.5 h-4.5" />
+                      Log Out
+                    </button>
+                  </div>
+                )}
               </div>
             </header>
 

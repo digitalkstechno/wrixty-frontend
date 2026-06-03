@@ -1,207 +1,225 @@
 "use client";
 
-import React from "react";
-import { fetchUsers, User } from "../../services/userService";
+import React, { useState, useEffect } from "react";
+import { apiGet, endPointApi } from "../../services/api";
 import { Table, Column } from "../../components/common/Table";
-import {
-  TrendingUp,
-  PeopleAlt,
-  ShoppingBag,
-  AssignmentReturn,
-  MonetizationOn
-} from "@mui/icons-material";
+import { Modal } from "../../components/common/Modal";
+
+// Icons (if needed, but user screenshots show clean numerical cards without huge icons, I will keep it simple)
 
 export default function DashboardPage() {
-  const [users, setUsers] = React.useState<User[]>([]);
-  const [leads, setLeads] = React.useState<any[]>([
-    { id: "1", name: "Rajesh Kumar", phone_number: "9988776655", product: "Wrixty Ashwagandha Gold", amount: 1200, quantity: 2, subtotal: 2400, assgin: "Aman Sharma", date: "2026-05-29", time: "10:30", status: "New", note: "Interested in stress relief products." },
-    { id: "2", name: "Suresh Gupta", phone_number: "8877665544", product: "Wrixty Triphala Digest", amount: 650, quantity: 1, subtotal: 650, assgin: "Priya Patel", date: "2026-05-29", time: "11:15", status: "Call Back", note: "Wants to consult with doctor first." },
-    { id: "3", name: "Neha Sharma", phone_number: "7766554433", product: "Wrixty Shatavari Hormonal Balance", amount: 1100, quantity: 1, subtotal: 1100, assgin: "Aman Sharma", date: "2026-05-30", time: "09:00", status: "In-Progress", note: "Inquiring about hormonal balance pack." },
-    { id: "4", name: "Ramesh Patel", phone_number: "9012345678", product: "Wrixty Brahmi Mind Focus", amount: 890, quantity: 3, subtotal: 2670, assgin: "Vikram Singh", date: "2026-05-28", time: "16:20", status: "Pending", note: "Asked for discount." }
-  ]);
-  const [orders, setOrders] = React.useState<any[]>([
-    { id: "1", leadId: "4", name: "Ramesh Patel", phone_number: "9012345678", product: "Wrixty Brahmi Mind Focus", amount: 890, quantity: 3, subtotal: 2670, grandTotal: 2670, date: "2026-05-28", paymentType: "COD", courier: "Delhivery", assginTo: "Vikram Singh", transactionId: "TXN90283019", status: "Dispatched" }
-  ]);
-  const [returnOrders, setReturnOrders] = React.useState<any[]>([
-    { id: "1", customerName: "Anil Saxena", phone_number: "9123456780", assginTo: "Aman Sharma", orderDate: "2026-05-20", returnDate: "2026-05-25", product: "Wrixty Neem Blood Purify", amount: 450, quantity: 2, subtotal: 900, type: "Wrong Product Delivered" }
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState<any>({});
+  const [productReport, setProductReport] = useState<any[]>([]);
+  const [staffReport, setStaffReport] = useState<any[]>([]);
 
-  React.useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const res = await fetchUsers({ page: 1, limit: 100 });
-        setUsers(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    loadUsers();
-  }, []);
+  // Date filters
+  const today = new Date().toISOString().split("T")[0];
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
 
-  // 1. Calculations
-  const totalLeads = leads.filter(l => !l.isDeleted).length;
-  const totalOrders = orders.length;
-  const totalReturns = returnOrders.length;
-  const totalRevenue = orders.reduce((sum, o) => sum + o.grandTotal, 0);
+  // Modal State
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
 
-  // Return rate percentage
-  const returnRate = totalOrders > 0 ? ((totalReturns / totalOrders) * 100).toFixed(1) : "0.0";
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      const { data } = await apiGet(endPointApi.dashboardStats, { startDate, endDate });
+      setMetrics(data.metrics || {});
+      setProductReport(data.productReport || []);
+      setStaffReport(data.staffReport || []);
+    } catch (error) {
+      console.error("Error fetching dashboard stats", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Metrics list
-  const metrics = [
-    { name: "Total Leads", value: totalLeads, icon: <PeopleAlt className="w-5 h-5 text-primary-teal" />, desc: "Active inquiries in CRM" },
-    { name: "Total Orders", value: totalOrders, icon: <ShoppingBag className="w-5 h-5 text-secondary-cyan" />, desc: "Successfully converted orders" },
-    { name: "Total Returns", value: totalReturns, icon: <AssignmentReturn className="w-5 h-5 text-error" />, desc: "Returned/Rejected orders" },
-    { name: "Total Revenue", value: `₹${totalRevenue.toLocaleString("en-IN")}`, icon: <MonetizationOn className="w-5 h-5 text-warning" />, desc: "Delivered sales value" }
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, [startDate, endDate]);
 
-  // Best Selling Products data
-  const bestSellers = React.useMemo(() => {
-    const counts: Record<string, { count: number; amt: number }> = {};
-    orders.forEach(o => {
-      if (!counts[o.product]) {
-        counts[o.product] = { count: 0, amt: 0 };
-      }
-      counts[o.product].count += o.quantity;
-      counts[o.product].amt += o.grandTotal;
-    });
-
-    return Object.entries(counts).map(([name, stat]) => ({
-      name,
-      count: stat.count,
-      amount: `₹${stat.amt.toLocaleString("en-IN")}`
-    }));
-  }, [orders]);
-
-  // Columns for Best Selling Table
-  const productColumns: Column<typeof bestSellers[0]>[] = [
+  const productColumns: Column<any>[] = [
     { key: "name", header: "Product Name" },
-    { key: "count", header: "Selling Count" },
-    { key: "amount", header: "Amount" }
+    { key: "sellingCount", header: "Selling Count" },
+    { 
+      key: "amount", 
+      header: "Amount", 
+      render: (v) => Number(v || 0).toFixed(2)
+    }
   ];
 
-  // Staff order statistics
-  const staffStats = React.useMemo(() => {
-    const stats: Record<string, { total: number; returned: number; delivered: number; qty: number; retQty: number; subtotal: number }> = {};
-    
-    // Initialize staff list
-    users.forEach(u => {
-      stats[u.name] = { total: 0, returned: 0, delivered: 0, qty: 0, retQty: 0, subtotal: 0 };
-    });
-
-    orders.forEach(o => {
-      const staffName = o.assginTo || "Super Admin";
-      if (!stats[staffName]) {
-        stats[staffName] = { total: 0, returned: 0, delivered: 0, qty: 0, retQty: 0, subtotal: 0 };
-      }
-      stats[staffName].total += 1;
-      stats[staffName].qty += o.quantity;
-      stats[staffName].subtotal += o.grandTotal;
-      if (o.status === "Delivered") {
-        stats[staffName].delivered += 1;
-      }
-    });
-
-    returnOrders.forEach(r => {
-      const staffName = r.assginTo || "Super Admin";
-      if (!stats[staffName]) {
-        stats[staffName] = { total: 0, returned: 0, delivered: 0, qty: 0, retQty: 0, subtotal: 0 };
-      }
-      stats[staffName].returned += 1;
-      stats[staffName].retQty += r.quantity;
-    });
-
-    return Object.entries(stats).map(([name, s]) => ({
-      name,
-      total: s.total,
-      returned: s.returned,
-      delivered: s.delivered,
-      qty: s.qty,
-      retQty: s.retQty,
-      subtotal: `₹${s.subtotal.toLocaleString("en-IN")}`
-    }));
-  }, [users, orders, returnOrders]);
-
-  // Columns for Staff Table
-  const staffColumns: Column<typeof staffStats[0]>[] = [
-    { key: "name", header: "Staff Name" },
-    { key: "total", header: "Staff Total Order" },
-    { key: "returned", header: "Staff Return Order" },
-    { key: "delivered", header: "Staff Order" },
-    { key: "qty", header: "Order Quantity" },
-    { key: "retQty", header: "Order Return Quantity" },
-    { key: "subtotal", header: "Subtotal" }
+  const staffColumns: Column<any>[] = [
+    { key: "staffName", header: "Staff Name" },
+    { key: "staffTotalOrder", header: "Staff Total Order" },
+    { key: "staffReturnOrder", header: "Staff Return Order" },
+    { key: "staffOrder", header: "Staff Order" }
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Block */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-subtle p-8 border border-border-ui rounded-lg shadow-soft relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary-teal/5 blur-3xl rounded-full -mr-32 -mt-32"></div>
-        <div className="space-y-1 relative z-10">
-          <h2 className="text-2xl font-black uppercase tracking-wider text-[#1f2f3e]">
-            Ayurvedic Dashboard
-          </h2>
-          <p className="text-sm text-text-secondary font-semibold uppercase tracking-wider">
-            Real-time analytics and staff metrics overview
-          </p>
-        </div>
-        <div className="flex items-center gap-2 bg-white/50 backdrop-blur-sm border border-primary-teal/10 px-4 py-2 rounded-lg relative z-10">
-          <TrendingUp className="w-4 h-4 text-primary-teal" />
-          <span className="text-sm font-bold text-primary-teal uppercase tracking-wider">
-            Return Rate: {returnRate}%
-          </span>
+    <div className="space-y-6">
+      {/* Top Header with Date Filter */}
+      <div className="flex justify-end">
+        <div className="flex items-center gap-2 bg-white border border-border-ui px-4 py-2 rounded-lg text-sm text-text-secondary shadow-sm">
+          <span>📅</span>
+          <input 
+            type="date" 
+            value={startDate} 
+            onChange={(e) => setStartDate(e.target.value)}
+            className="focus:outline-none"
+          />
+          <span>-</span>
+          <input 
+            type="date" 
+            value={endDate} 
+            onChange={(e) => setEndDate(e.target.value)}
+            className="focus:outline-none"
+          />
         </div>
       </div>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metrics.map((metric, i) => (
-          <div
-            key={i}
-            className="p-6 bg-card-bg border border-border-ui rounded-lg shadow-soft flex items-center justify-between transition-all hover:border-primary-teal/20 hover:shadow-md group relative overflow-hidden"
-          >
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary-teal to-secondary-cyan opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="space-y-2 text-left relative z-10">
-              <span className="text-sm text-text-secondary font-bold uppercase tracking-wider">
-                {metric.name}
-              </span>
-              <h3 className="text-3xl font-black text-[#1f2f3e] tracking-tight">
-                {metric.value}
-              </h3>
-              <p className="text-xs text-text-secondary font-medium">
-                {metric.desc}
-              </p>
-            </div>
-            <div className="p-4 bg-background border border-border-ui/50 rounded-lg group-hover:bg-primary-teal/5 transition-colors">
-              {metric.icon}
-            </div>
-          </div>
-        ))}
+      {/* 6 Top Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {/* Total Leads */}
+        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+          <h3 className="text-2xl font-bold text-[#3478e5]">{metrics.totalLeads || 0}</h3>
+          <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Total Leads</p>
+        </div>
+        {/* Converted to Orders */}
+        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+          <h3 className="text-2xl font-bold text-text-primary">{metrics.convertedToOrders || 0}</h3>
+          <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Converted to Orders</p>
+        </div>
+        {/* Total Sell */}
+        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+          <h3 className="text-2xl font-bold text-primary-teal">₹ {(metrics.totalSell || 0).toLocaleString('en-IN')}</h3>
+          <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Total Sell</p>
+        </div>
+        {/* Total Return Order (Amount) */}
+        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+          <h3 className="text-2xl font-bold text-primary-teal">₹ {(metrics.totalReturnAmount || 0).toLocaleString('en-IN')}</h3>
+          <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Total Return Order</p>
+        </div>
+        {/* Net Rate Amount */}
+        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+          <h3 className="text-2xl font-bold text-primary-teal">₹ {(metrics.netRateAmount || 0).toLocaleString('en-IN')}</h3>
+          <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Net Rate Amount</p>
+        </div>
+        {/* Total Return Order (Count) */}
+        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+          <h3 className="text-2xl font-bold text-error">{metrics.totalReturnOrderCount || 0}</h3>
+          <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Total Return Order</p>
+        </div>
       </div>
 
       {/* Tables Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Side: Staff Stats */}
-        <div className="lg:col-span-2 space-y-4">
-          <h4 className="text-sm font-black uppercase tracking-wider text-text-secondary px-2">
-            👥 Staff Performance Matrix
-          </h4>
-          <div className="bg-card-bg p-6 border border-border-ui rounded-lg shadow-soft">
-            <Table data={staffStats} columns={staffColumns} searchable={false} idField="name" />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Left Side: Repart Order Product */}
+        <div className="bg-white border border-border-ui rounded-lg shadow-soft p-4">
+          <h4 className="text-lg font-bold text-[#1f2f3e] mb-4">Repart Order Product</h4>
+          {loading ? (
+            <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-primary-teal border-t-transparent rounded-full animate-spin"></div></div>
+          ) : (
+            <Table data={productReport} columns={productColumns} searchable={false} idField="name" />
+          )}
         </div>
 
-        {/* Right Side: Best Selling Products */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-black uppercase tracking-wider text-text-secondary px-2">
-            📦 Best Selling Products
-          </h4>
-          <div className="bg-card-bg p-6 border border-border-ui rounded-lg shadow-soft">
-            <Table data={bestSellers} columns={productColumns} searchable={false} idField="name" />
+        {/* Right Side: Staff Vise Order Products */}
+        <div className="bg-white border border-border-ui rounded-lg shadow-soft p-4">
+          <h4 className="text-lg font-bold text-[#1f2f3e] mb-4">Staff Vise Order Products</h4>
+          {loading ? (
+            <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-primary-teal border-t-transparent rounded-full animate-spin"></div></div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-max text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-border-ui/50">
+                    <th className="px-4 py-3 text-xs font-semibold text-text-secondary">Staff Name</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-text-secondary">Staff Total Order</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-text-secondary">Staff Return Order</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-text-secondary">Staff Order</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {staffReport.map((staff, idx) => (
+                    <tr 
+                      key={idx} 
+                      className="border-b border-border-ui/30 hover:bg-background cursor-pointer transition-colors"
+                      onClick={() => setSelectedStaff(staff)}
+                    >
+                      <td className="px-4 py-3 text-sm font-medium text-text-primary">{staff.staffName}</td>
+                      <td className="px-4 py-3 text-sm text-text-secondary">{staff.staffTotalOrder}</td>
+                      <td className="px-4 py-3 text-sm text-text-secondary">{staff.staffReturnOrder}</td>
+                      <td className="px-4 py-3 text-sm text-text-secondary">{staff.staffOrder}</td>
+                    </tr>
+                  ))}
+                  {staffReport.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-sm text-text-secondary">No data available</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Staff Modal */}
+      <Modal isOpen={!!selectedStaff} onClose={() => setSelectedStaff(null)} title={`Order Details (${selectedStaff?.staffName})`} maxWidth="3xl">
+        <div className="p-4 overflow-x-auto">
+          <table className="w-full min-w-max text-left border-collapse border border-border-ui">
+            <thead>
+              <tr className="border-b border-border-ui">
+                <th className="px-4 py-3 text-sm font-bold text-text-primary border-r border-border-ui">Product Name</th>
+                <th className="px-4 py-3 text-sm font-bold text-text-primary border-r border-border-ui">Order Quantity</th>
+                <th className="px-4 py-3 text-sm font-bold text-text-primary border-r border-border-ui">Order Return Quantity</th>
+                <th className="px-4 py-3 text-sm font-bold text-text-primary border-r border-border-ui">Total Order</th>
+                <th className="px-4 py-3 text-sm font-bold text-text-primary">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedStaff?.products?.map((p: any, idx: number) => (
+                <tr key={idx} className="border-b border-border-ui">
+                  <td className="px-4 py-3 text-sm text-text-secondary border-r border-border-ui">{p.productName}</td>
+                  <td className="px-4 py-3 text-sm text-text-secondary border-r border-border-ui">{p.orderQuantity} ( ₹ {p.orderAmount} )</td>
+                  <td className="px-4 py-3 text-sm text-text-secondary border-r border-border-ui">{p.returnQuantity} ( ₹ {p.returnAmount} )</td>
+                  <td className="px-4 py-3 text-sm text-text-secondary border-r border-border-ui">{p.totalOrder}</td>
+                  <td className="px-4 py-3 text-sm text-text-secondary">₹ {p.subtotal}</td>
+                </tr>
+              ))}
+              
+              {/* Total Row */}
+              <tr className="bg-background border-t-2 border-border-ui font-bold">
+                <td className="px-4 py-3 text-sm text-text-primary border-r border-border-ui">Total</td>
+                <td className="px-4 py-3 text-sm text-text-primary border-r border-border-ui">
+                  {selectedStaff?.products?.reduce((acc: number, p: any) => acc + p.orderQuantity, 0)} (₹ {selectedStaff?.products?.reduce((acc: number, p: any) => acc + p.orderAmount, 0)})
+                </td>
+                <td className="px-4 py-3 text-sm text-text-primary border-r border-border-ui">
+                  {selectedStaff?.products?.reduce((acc: number, p: any) => acc + p.returnQuantity, 0)} (₹ {selectedStaff?.products?.reduce((acc: number, p: any) => acc + p.returnAmount, 0)})
+                </td>
+                <td className="px-4 py-3 text-sm text-text-primary border-r border-border-ui">
+                  {selectedStaff?.products?.reduce((acc: number, p: any) => acc + p.totalOrder, 0)}
+                </td>
+                <td className="px-4 py-3 text-sm text-text-primary">
+                  ₹ {selectedStaff?.products?.reduce((acc: number, p: any) => acc + p.subtotal, 0)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={() => setSelectedStaff(null)}
+              className="bg-[#2c5f59] hover:bg-[#234d48] text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors"
+            >
+              Close
+            </button>
           </div>
         </div>
-      </div>
+      </Modal>
+
     </div>
   );
 }

@@ -82,6 +82,9 @@ export interface EndPointApi {
 
   // Activity Logs
   activityLogs: string;
+
+  // Dashboard
+  dashboardStats: string;
 }
 
 const endPointApi: EndPointApi = {
@@ -168,6 +171,9 @@ const endPointApi: EndPointApi = {
 
   // Activity Logs
   activityLogs: 'activity-logs',
+
+  // Dashboard
+  dashboardStats: 'dashboard/stats',
 };
 
 export default endPointApi;
