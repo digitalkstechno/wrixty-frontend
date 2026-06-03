@@ -52,17 +52,22 @@ export default function ReturnOrderPage() {
   const [startDate, setStartDate] = useState<string | null>(getTodayString());
   const [endDate, setEndDate] = useState<string | null>(getTodayString());
 
+  const [orderStartDate, setOrderStartDate] = useState<string | null>(getTodayString());
+  const [orderEndDate, setOrderEndDate] = useState<string | null>(getTodayString());
+
   const [filterAssign, setFilterAssign] = useState("all");
   const [filterOrder, setFilterOrder] = useState("all");
   const [filterProduct, setFilterProduct] = useState("all");
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const loadReturnOrdersData = async (searchOverride?: string, overrideDates?: { start: string | null, end: string | null }) => {
+  const loadReturnOrdersData = async (searchOverride?: string, overrideDates?: { start?: string | null, end?: string | null, orderStart?: string | null, orderEnd?: string | null }) => {
     try {
       setIsFetchingData(true);
       const searchToUse = searchOverride !== undefined ? searchOverride : searchQuery;
       const startToUse = overrideDates !== undefined ? overrideDates.start : startDate;
       const endToUse = overrideDates !== undefined ? overrideDates.end : endDate;
+      const oStartToUse = overrideDates !== undefined ? overrideDates.orderStart : orderStartDate;
+      const oEndToUse = overrideDates !== undefined ? overrideDates.orderEnd : orderEndDate;
       
       const res = await fetchReturnOrders({
         page: 1, limit: 100,
@@ -70,7 +75,9 @@ export default function ReturnOrderPage() {
         assginTo: filterAssign !== "all" ? filterAssign : undefined,
         product: filterProduct !== "all" ? filterProduct : undefined,
         startDate: startToUse || undefined,
-        endDate: endToUse || undefined
+        endDate: endToUse || undefined,
+        orderStartDate: oStartToUse || undefined,
+        orderEndDate: oEndToUse || undefined
       });
       // fetchReturnOrders returns raw axios response; backend returns { data: [...] } or array
       const rawData = res?.data?.data ?? res?.data ?? [];
@@ -81,8 +88,8 @@ export default function ReturnOrderPage() {
         phone_number: r.phone_number,
         assginTo: r.assginTo?.name || r.assginTo || "",
         assginToId: r.assginTo?._id || r.assginTo?.id || r.assginTo || "",
-        orderDate: r.createdAt ? (() => {
-          const d = new Date(r.createdAt);
+        orderDate: r.orderId && r.orderId.createdAt ? (() => {
+          const d = new Date(r.orderId.createdAt);
           const day = String(d.getDate()).padStart(2, '0');
           const month = String(d.getMonth() + 1).padStart(2, '0');
           const year = String(d.getFullYear()).slice(-2);
@@ -337,20 +344,34 @@ export default function ReturnOrderPage() {
 
         {/* Top Header Row with Dates and Add Button */}
         <div className="flex flex-wrap items-center justify-between border-b border-zinc-100  pb-4 gap-4">
-          <h2 className="text-xl font-bold text-zinc-800  min-w-[200px]">
+          <h2 className="text-xl font-bold text-zinc-800">
             Return Order List
           </h2>
-
-          <div className="flex flex-wrap items-center gap-6 flex-1 justify-center">
-            <DateRangePicker 
-              startDate={startDate} 
-              endDate={endDate} 
-              onChange={(start, end) => {
-                setStartDate(start);
-                setEndDate(end);
-                loadReturnOrdersData(undefined, { start, end });
-              }} 
-            />
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Order Date :</span>
+              <DateRangePicker 
+                startDate={orderStartDate} 
+                endDate={orderEndDate} 
+                onChange={(start, end) => {
+                  setOrderStartDate(start);
+                  setOrderEndDate(end);
+                  loadReturnOrdersData(undefined, { start: startDate, end: endDate, orderStart: start, orderEnd: end });
+                }} 
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Return Order Date :</span>
+              <DateRangePicker 
+                startDate={startDate} 
+                endDate={endDate} 
+                onChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                  loadReturnOrdersData(undefined, { start, end, orderStart: orderStartDate, orderEnd: orderEndDate });
+                }} 
+              />
+            </div>
           </div>
 
           {hasPermission("Return-order-add") && (

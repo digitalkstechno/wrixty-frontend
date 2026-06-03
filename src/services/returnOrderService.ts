@@ -36,12 +36,19 @@ export const exportReturnOrders = async (params: any = {}): Promise<Blob> => {
       const year = String(d.getFullYear()).slice(-2);
       return `${day}/${month}/${year}`;
     })() : "-";
+    const formattedOrderDate = (r.orderId && r.orderId.createdAt) ? (() => {
+      const d = new Date(r.orderId.createdAt);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = String(d.getFullYear()).slice(-2);
+      return `${day}/${month}/${year}`;
+    })() : "-";
     
     return {
       "No": index + 1,
       "Mobile Number": r.phone_number || "-",
       "Assgin To": r.assginTo?.name || r.assginTo || "-",
-      "Order Date": formattedDate,
+      "Order Date": formattedOrderDate,
       "Product Name": r.products?.map((p: any) => p.name).join(", ") || "-",
       "Amount": r.amount || 0,
       "Return Order Date": formattedDate,

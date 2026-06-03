@@ -28,6 +28,7 @@ export interface Lead {
   isDeleted?: boolean;
   deleteDate?: string;
   reminderDate?: string;
+  orderStatus?: boolean;
 }
 
 import { useToast } from "../../context/ToastContext";

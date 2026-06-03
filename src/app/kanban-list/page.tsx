@@ -13,36 +13,55 @@ export default function KanbanListPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [columnPages, setColumnPages] = useState<Record<string, number>>({});
+  const [hasMore, setHasMore] = useState<Record<string, boolean>>({});
+  const [isFetchingColumn, setIsFetchingColumn] = useState<Record<string, boolean>>({});
+
+  const mapLead = (l: any, usersList: any[]) => {
+    const usersLookup: Record<string, { name: string; email: string }> = {};
+    usersList.forEach((u: any) => {
+      usersLookup[u._id || u.id] = { name: u.name || "", email: u.email || "" };
+    });
+    const assginId  = l.assgin?._id || (typeof l.assgin === "string" ? l.assgin : "") || "";
+    const fromObj   = { name: l.assgin?.name || "", email: l.assgin?.email || "" };
+    const fromLookup = assginId ? (usersLookup[assginId] || { name: "", email: "" }) : { name: "", email: "" };
+    return {
+      ...l,
+      id: l._id || l.id,
+      statusName:  l.status?.name || l.status || "Open",
+      productName: l.product || (l.products?.map((p: any) => p.name).join(", ") || "No Product"),
+      assginId,
+      assginName:  fromObj.name  || fromLookup.name,
+      assginEmail: fromObj.email || fromLookup.email,
+    };
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [statusesRes, leadsRes, usersRes] = await Promise.all([
+        const [statusesRes, usersRes] = await Promise.all([
           fetchStatuses({ page: 1, limit: 100 }),
-          fetchLeads({ page: 1, limit: 500 }), // fetching more for kanban board
           fetchUsers({ page: 1, limit: 100 })
         ]);
         setStatuses(statusesRes.data);
         setUsers(usersRes.data);
-        const usersLookup: Record<string, { name: string; email: string }> = {};
-        usersRes.data.forEach((u: any) => {
-          usersLookup[u._id || u.id] = { name: u.name || "", email: u.email || "" };
-        });
-        const mappedLeads = leadsRes.data.map((l: any) => {
-          // assgin may be a populated object OR a raw ID string
-          const assginId  = l.assgin?._id || (typeof l.assgin === "string" ? l.assgin : "") || "";
-          const fromObj   = { name: l.assgin?.name || "", email: l.assgin?.email || "" };
-          const fromLookup = assginId ? (usersLookup[assginId] || { name: "", email: "" }) : { name: "", email: "" };
-          return {
-            ...l,
-            id: l._id || l.id,
-            statusName:  l.status?.name || l.status || "Open",
-            productName: l.product || (l.products?.map((p: any) => p.name).join(", ") || "No Product"),
-            assginId,
-            assginName:  fromObj.name  || fromLookup.name,
-            assginEmail: fromObj.email || fromLookup.email,
-          };
-        });
-        setLeads(mappedLeads);
+
+        const initialPages: Record<string, number> = {};
+        const initialHasMore: Record<string, boolean> = {};
+        let allLeads: any[] = [];
+
+        await Promise.all(statusesRes.data.map(async (stage: any) => {
+          const stageId = stage._id || stage.id;
+          const res = await fetchLeads({ page: 1, limit: 10, status: stageId });
+          const mapped = res.data.map((l: any) => mapLead(l, usersRes.data));
+          allLeads = [...allLeads, ...mapped];
+          initialPages[stageId] = 1;
+          initialHasMore[stageId] = res.data.length === 10;
+        }));
+
+        setLeads(allLeads);
+        setColumnPages(initialPages);
+        setHasMore(initialHasMore);
       } catch (err) {
         console.error(err);
       } finally {
@@ -51,6 +70,36 @@ export default function KanbanListPage() {
     };
     loadData();
   }, []);
+
+  const loadMoreLeads = async (stageId: string) => {
+    setIsFetchingColumn(prev => ({ ...prev, [stageId]: true }));
+    try {
+      const nextPage = (columnPages[stageId] || 1) + 1;
+      const res = await fetchLeads({ page: nextPage, limit: 10, status: stageId });
+      
+      const mapped = res.data.map((l: any) => mapLead(l, users));
+
+      setLeads(prev => {
+        const existingIds = new Set(prev.map(l => l.id));
+        const added = mapped.filter((l: any) => !existingIds.has(l.id));
+        return [...prev, ...added];
+      });
+
+      setColumnPages(prev => ({ ...prev, [stageId]: nextPage }));
+      setHasMore(prev => ({ ...prev, [stageId]: res.data.length === 10 }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsFetchingColumn(prev => ({ ...prev, [stageId]: false }));
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>, stageId: string) => {
+    const bottom = Math.ceil(e.currentTarget.scrollHeight - e.currentTarget.scrollTop) <= e.currentTarget.clientHeight + 5;
+    if (bottom && hasMore[stageId] && !isFetchingColumn[stageId]) {
+      loadMoreLeads(stageId);
+    }
+  };
 
   const updateLeadLocally = (id: string, updated: Partial<any>) => {
     setLeads(prev => prev.map(l => (l._id || l.id) === id ? { ...l, ...updated } : l));
@@ -130,7 +179,10 @@ export default function KanbanListPage() {
               </div>
 
               {/* Cards List */}
-              <div className="space-y-3 min-h-[150px] max-h-[70vh] overflow-y-auto pr-1">
+              <div 
+                className="space-y-3 min-h-[150px] max-h-[70vh] overflow-y-auto pr-1"
+                onScroll={(e) => handleScroll(e, stage.id || stage._id)}
+              >
                 {stageLeads.length > 0 ? (
                   stageLeads.map((lead) => (
                     <div
@@ -195,6 +247,11 @@ export default function KanbanListPage() {
                 ) : (
                   <div className="flex items-center justify-center h-full min-h-[120px] border-2 border-dashed border-border-ui rounded-lg bg-background/30 text-xs text-text-secondary font-bold uppercase tracking-widest">
                     Drop leads here
+                  </div>
+                )}
+                {isFetchingColumn[stage.id || stage._id] && (
+                  <div className="flex items-center justify-center p-2">
+                    <div className="w-5 h-5 border-2 border-primary-teal border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
               </div>

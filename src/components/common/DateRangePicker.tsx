@@ -56,7 +56,13 @@ const PRESETS = [
 
 export const DateRangePicker: React.FC<DateRangePickerProps> = ({ startDate, endDate, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activePreset, setActivePreset] = useState<string>('All Data');
+  const [activePreset, setActivePreset] = useState<string>(() => {
+    const matchingPreset = PRESETS.find(p => {
+      const v = p.getValue();
+      return v.start === startDate && v.end === endDate;
+    });
+    return matchingPreset ? matchingPreset.label : (startDate && endDate ? 'Custom Range' : 'All Data');
+  });
   
   // Custom range selection states
   const [isCustom, setIsCustom] = useState(false);
@@ -79,11 +85,24 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ startDate, end
   }, []);
 
   useEffect(() => {
-    // If props change and not custom, we could try to guess the preset.
-    // For simplicity, we just sync temp values when popover opens
+    // Sync active preset and temp values when popover opens or props change
     if (isOpen) {
       setTempStart(startDate);
       setTempEnd(endDate);
+      const matchingPreset = PRESETS.find(p => {
+        const v = p.getValue();
+        return v.start === startDate && v.end === endDate;
+      });
+      if (matchingPreset) {
+        setActivePreset(matchingPreset.label);
+        setIsCustom(false);
+      } else if (startDate || endDate) {
+        setActivePreset('Custom Range');
+        setIsCustom(true);
+      } else {
+        setActivePreset('All Data');
+        setIsCustom(false);
+      }
     }
   }, [isOpen, startDate, endDate]);
 
