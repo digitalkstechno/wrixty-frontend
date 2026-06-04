@@ -54,6 +54,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
   // Product Selection Table States
   const [modalSelectedProducts, setModalSelectedProducts] = useState<SelectedProductRow[]>([]);
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
   const [currentSelectedProductId, setCurrentSelectedProductId] = useState("");
 
   const [paymentType, setPaymentType] = useState<"COD" | "Prepaid">("COD");
@@ -256,6 +257,30 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
   const handleRemoveProduct = (productId: string) => {
     setModalSelectedProducts(modalSelectedProducts.filter(p => p.productId !== productId));
+    setSelectedRowIds(prev => prev.filter(id => id !== productId));
+  };
+
+  const handleBulkRemove = () => {
+    if (selectedRowIds.length === 0) return;
+    setModalSelectedProducts(modalSelectedProducts.filter(p => !selectedRowIds.includes(p.productId)));
+    setSelectedRowIds([]);
+    toast.success(`${selectedRowIds.length} product(s) removed!`);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedRowIds.length === modalSelectedProducts.length && modalSelectedProducts.length > 0) {
+      setSelectedRowIds([]);
+    } else {
+      setSelectedRowIds(modalSelectedProducts.map(p => p.productId));
+    }
+  };
+
+  const toggleSelectRow = (productId: string) => {
+    setSelectedRowIds(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId) 
+        : [...prev, productId]
+    );
   };
 
   const handleQtyChange = (productId: string, qty: number) => {
@@ -350,8 +375,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={activeLead ? "Edit Lead Details" : "Add New Lead"} isLoading={isLoading} sizeClass="max-w-6xl">
-      <form onSubmit={handleSubmit} className="space-y-5 text-left max-w-5xl mx-auto pr-1">
-        <p className="text-xs text-text-secondary font-medium">Fill out the details to {activeLead ? 'update the' : 'register a new'} lead in the system.</p>
+      <form onSubmit={handleSubmit} className="space-y-6 text-left max-w-5xl mx-auto pr-1">
+        <p className="text-sm text-text-secondary font-semibold">Fill out the details to {activeLead ? 'update the' : 'register a new'} lead in the system.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -487,11 +512,12 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
           </div>
         )}
 
-        <div className="border-t border-zinc-150 pt-4 space-y-3">
-          <h4 className="text-sm font-bold text-zinc-700">Select Products</h4>
-          <div className="flex gap-2.5 items-end">
+        <div className="border-t border-zinc-150 pt-6 space-y-4">
+          <h4 className="text-lg font-bold text-zinc-800">Choose Products to Add</h4>
+          <div className="flex gap-4 items-end bg-zinc-50 p-4 rounded-xl border border-zinc-200">
             <div className="flex-1">
               <Select
+                label="Search & Select Product"
                 value={currentSelectedProductId}
                 onChange={(e) => setCurrentSelectedProductId(e.target.value)}
                 options={[
@@ -500,74 +526,135 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                 ]}
               />
             </div>
-            <Button type="button" variant="success" onClick={handleAddProduct}>
+            <Button type="button" variant="success" size="lg" onClick={handleAddProduct} className="mb-1">
               Add Product
             </Button>
           </div>
         </div>
 
-        <div className="space-y-3 text-left">
-          <h4 className="text-sm font-bold text-zinc-700">Selected Products</h4>
-          <div className="border border-zinc-200 rounded-lg overflow-hidden">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-zinc-50 border-b border-zinc-200 font-semibold text-zinc-500 uppercase">
-                  <th className="p-3">Product Name</th>
-                  <th className="p-3">Amount</th>
-                  <th className="p-3">Quantity</th>
-                  <th className="p-3">Subtotal</th>
-                  <th className="p-3 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-150">
-                {modalSelectedProducts.length > 0 ? (
-                  modalSelectedProducts.map((row) => (
-                    <tr key={row.productId}>
-                      <td className="p-3 font-medium text-zinc-800">{row.name}</td>
-                      <td className="p-3 font-medium text-zinc-700">₹{row.amount}</td>
-                      <td className="p-3 w-24">
-                        <input
-                          type="number"
-                          min="1"
-                          value={row.quantity}
-                          onChange={(e) => handleQtyChange(row.productId, Number(e.target.value))}
-                          className="w-16 px-2 py-1 bg-zinc-50 border border-zinc-200 rounded-lg focus:ring-1 focus:ring-primary-teal outline-none text-center"
-                        />
-                      </td>
-                      <td className="p-3 font-black text-zinc-800">₹{row.subtotal}</td>
-                      <td className="p-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveProduct(row.productId)}
-                          className="p-1.5 bg-rose-500 hover:bg-rose-400 text-white rounded-lg transition-all shadow-sm"
-                          title="Remove Product"
-                        >
-                          <FiTrash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="p-4 text-center text-zinc-400 font-medium">
-                      No products selected
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+       <div className="space-y-4 text-left">
+  <div className="flex items-center justify-between">
+    <h4 className="text-xl font-bold text-zinc-800">
+      Selected Products
+    </h4>
+    {selectedRowIds.length > 0 && (
+      <Button 
+        type="button" 
+        variant="danger" 
+        size="sm" 
+        onClick={handleBulkRemove}
+        className="px-4 py-1.5"
+      >
+        Remove Selected ({selectedRowIds.length})
+      </Button>
+    )}
+  </div>
 
-        <div className="flex items-center justify-between border-t border-zinc-150 pt-4 mt-2">
-          <span className="text-sm font-black text-zinc-700">
-            Total Amount: ₹{totalAmount.toFixed(2)}
+  <div className="border border-zinc-200 overflow-hidden rounded-xl shadow-sm">
+    <table className="w-full border-collapse">
+      <thead>
+        <tr className="bg-zinc-100/80 border-b border-zinc-200">
+          <th className="p-4 w-12 text-center">
+            <input
+              type="checkbox"
+              checked={selectedRowIds.length === modalSelectedProducts.length && modalSelectedProducts.length > 0}
+              onChange={toggleSelectAll}
+              className="w-5 h-5 text-primary-teal rounded-md border-zinc-300 focus:ring-primary-teal cursor-pointer"
+            />
+          </th>
+          <th className="p-4 text-base font-bold text-zinc-700 uppercase tracking-wide text-left">
+            Product Name
+          </th>
+          <th className="p-4 text-base font-bold text-zinc-700 uppercase tracking-wide text-left">
+            Amount
+          </th>
+          <th className="p-4 text-base font-bold text-zinc-700 uppercase tracking-wide text-left">
+            Quantity
+          </th>
+          <th className="p-4 text-base font-bold text-zinc-700 uppercase tracking-wide text-left">
+            Subtotal
+          </th>
+          <th className="p-4 text-base font-bold text-zinc-700 uppercase tracking-wide text-center">
+            Action
+          </th>
+        </tr>
+      </thead>
+
+      <tbody className="divide-y divide-zinc-200">
+        {modalSelectedProducts.length > 0 ? (
+          modalSelectedProducts.map((row) => (
+            <tr 
+              key={row.productId} 
+              className={`hover:bg-zinc-50/80 transition-colors ${selectedRowIds.includes(row.productId) ? 'bg-zinc-50' : ''}`}
+            >
+              <td className="p-4 text-center">
+                <input
+                  type="checkbox"
+                  checked={selectedRowIds.includes(row.productId)}
+                  onChange={() => toggleSelectRow(row.productId)}
+                  className="w-5 h-5 text-primary-teal rounded-md border-zinc-300 focus:ring-primary-teal cursor-pointer"
+                />
+              </td>
+              <td className="p-4 font-semibold text-zinc-800 text-lg">
+                {row.name}
+              </td>
+
+              <td className="p-4 font-semibold text-zinc-700 text-base">
+                ₹{row.amount}
+              </td>
+
+              <td className="p-4">
+                <input
+                  type="number"
+                  min="1"
+                  value={row.quantity}
+                  onChange={(e) =>
+                    handleQtyChange(row.productId, Number(e.target.value))
+                  }
+                  className="w-24 px-4 py-2.5 text-base font-bold bg-white border border-zinc-200 rounded-lg focus:ring-2 focus:ring-primary-teal/20 focus:border-primary-teal outline-none text-center shadow-sm"
+                />
+              </td>
+
+              <td className="p-4 font-black text-zinc-900 text-lg">
+                ₹{row.subtotal}
+              </td>
+
+              <td className="p-4 text-center">
+                <button
+                  type="button"
+                  onClick={() => handleRemoveProduct(row.productId)}
+                  className="p-2.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-all duration-200"
+                  title="Remove Product"
+                >
+                  <FiTrash2 className="w-5 h-5" />
+                </button>
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td
+              colSpan={6}
+              className="p-12 text-center text-base text-zinc-400 font-semibold"
+            >
+              No products selected
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+        <div className="flex items-center justify-between border-t border-zinc-150 pt-6 mt-4">
+          <span className="text-xl font-black text-zinc-800 bg-zinc-100 px-6 py-3 rounded-xl border border-zinc-200 shadow-sm">
+            Total Amount: <span className="text-primary-teal ml-1">₹{totalAmount.toLocaleString()}</span>
           </span>
-          <div className="flex gap-3">
-            <Button type="button" variant="secondary" onClick={onClose}>
+          <div className="flex gap-4">
+            <Button type="button" variant="outline" size="lg" onClick={onClose} className="px-8">
               Cancel
             </Button>
-            <Button type="submit" variant="primary" isLoading={isLoading}>
+            <Button type="submit" variant="primary" size="lg" isLoading={isLoading} className="px-10">
               Save Lead
             </Button>
           </div>
