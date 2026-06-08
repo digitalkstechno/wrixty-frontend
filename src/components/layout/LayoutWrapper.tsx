@@ -152,6 +152,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
       <Link
         key={path}
         href={path}
+        prefetch={false}
         onClick={() => setSidebarOpen(false)}
         className={`flex items-center gap-3.5 px-4 py-2.5 rounded-lg text-sm font-medium capitalize tracking-wide transition-all duration-205 ${active
           ? "bg-gradient-primary text-white shadow-md font-semibold"
@@ -170,6 +171,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
       <Link
         key={path}
         href={path}
+        prefetch={false}
         onClick={() => setSidebarOpen(false)}
         className={`flex items-center px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 ${active
           ? "text-primary-teal font-bold bg-primary-teal/5"
@@ -411,6 +413,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                 <div className="absolute top-12 right-0 w-48 bg-card-bg border border-border-ui rounded-lg shadow-soft py-2 z-50 animate-fade-in">
                   <Link
                     href="/profile-details"
+                    prefetch={false}
                     onClick={() => setProfileDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 hover:bg-background text-sm text-text-primary font-medium transition-colors"
                   >

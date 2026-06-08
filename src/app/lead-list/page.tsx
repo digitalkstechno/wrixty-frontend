@@ -142,18 +142,16 @@ export default function LeadListPage() {
 
     const loadMasterData = async () => {
       try {
-        const [usersRes, prodsRes, statusRes, reasonRes, couriersRes] = await Promise.all([
+        const [usersRes, prodsRes, statusRes, reasonRes] = await Promise.all([
           fetchUsers({ page: 1, limit: 100 }),
           fetchProducts({ page: 1, limit: 100 }),
           fetchStatuses({ page: 1, limit: 100 }),
-          fetchReasonToCalls({ page: 1, limit: 100 }),
-          fetchCouriers({ page: 1, limit: 100 })
+          fetchReasonToCalls({ page: 1, limit: 100 })
         ]);
         setUsers(usersRes.data);
         setProducts(prodsRes.data);
         setStatuses(statusRes.data);
         setReasonsOptions(reasonRes.data);
-        if (couriersRes?.data) setCouriers(couriersRes.data);
       } catch (err) {
         console.error("Error loading master data", err);
       }
@@ -173,6 +171,7 @@ export default function LeadListPage() {
     loadMasterData();
     loadLeadsData(initialAssigneeFilter);
   }, []);
+
 
   const updateLead = async (id: string, updated: Partial<Lead>) => {
     setLeads(prev => prev.map(l => {
@@ -224,6 +223,14 @@ export default function LeadListPage() {
 
   const [leadFormModalOpen, setLeadFormModalOpen] = useState(false);
   const [convertModalOpen, setConvertModalOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (convertModalOpen && couriers.length === 0) {
+      fetchCouriers({ page: 1, limit: 100 }).then(res => {
+        if (res?.data) setCouriers(res.data);
+      }).catch(err => console.error("Error loading couriers", err));
+    }
+  }, [convertModalOpen, couriers.length]);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
 
@@ -561,6 +568,7 @@ export default function LeadListPage() {
   return (
     <div className="space-y-6">
       <LeadFormModal
+        key={leadFormModalOpen ? (activeLead ? activeLead.id : 'new-lead') : 'closed'}
         isOpen={leadFormModalOpen}
         onClose={() => setLeadFormModalOpen(false)}
         onSuccess={loadLeadsData}

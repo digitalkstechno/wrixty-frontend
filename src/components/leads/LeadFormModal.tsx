@@ -67,16 +67,22 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   const [isRepeatMode, setIsRepeatMode] = useState(false);
 
   useEffect(() => {
-    fetchCouriers({ limit: 100, page: 1 }).then(res => {
-      if (res && res.data) setCouriers(res.data);
-    }).catch(err => console.error(err));
+    if (isOpen && couriers.length === 0) {
+      fetchCouriers({ limit: 100, page: 1 }).then(res => {
+        if (res && res.data) setCouriers(res.data);
+      }).catch(err => console.error(err));
+    }
 
-    import("../../services/customerService").then(mod => {
-      mod.fetchCustomers().then(res => {
-        if (res && res.data) setCustomers(res.data);
+    if (isOpen && customers.length === 0) {
+      import("../../services/customerService").then(mod => {
+        mod.fetchCustomers().then(res => {
+          if (res && res.data) setCustomers(res.data);
+        });
       });
-    });
+    }
+  }, [isOpen, couriers.length, customers.length]);
 
+  useEffect(() => {
     const parsed = getAuthenticatedUser();
     if (parsed) {
       setCurrentUser(parsed);
@@ -376,7 +382,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={activeLead ? "Edit Lead Details" : "Add New Lead"} isLoading={isLoading} sizeClass="max-w-6xl">
       <form onSubmit={handleSubmit} className="space-y-6 text-left max-w-5xl mx-auto pr-1">
-        <p className="text-sm text-text-secondary font-semibold">Fill out the details to {activeLead ? 'update the' : 'register a new'} lead in the system.</p>
+        {/* <p className="text-sm text-text-secondary font-semibold">Fill out the details to {activeLead ? 'update the' : 'register a new'} lead in the system.</p> */}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
