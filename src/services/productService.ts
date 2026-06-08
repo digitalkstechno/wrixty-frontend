@@ -37,12 +37,12 @@ export const fetchProducts = async (params?: FetchParams): Promise<PaginatedResp
   if (params?.page === 1 && params?.limit === 100 && !params?.search) {
     if (cachedProducts && Date.now() - cachedProductsTime < CACHE_TTL) return cachedProducts;
     if (productsPromise) return productsPromise;
-    productsPromise = apiGet(endPointApi.products, params).then(({ data }) => {
+    productsPromise = apiGet(endPointApi.products, params).then(({ data }: any) => {
       cachedProducts = data;
       cachedProductsTime = Date.now();
       productsPromise = null;
       return data;
-    }).catch(err => {
+    }).catch((err: any) => {
       productsPromise = null;
       throw err;
     });

@@ -35,12 +35,12 @@ export const fetchStatuses = async (params?: FetchParams): Promise<PaginatedResp
   if (params?.page === 1 && params?.limit === 100 && !params?.search) {
     if (cachedStatuses && Date.now() - cachedStatusesTime < CACHE_TTL) return cachedStatuses;
     if (statusesPromise) return statusesPromise;
-    statusesPromise = apiGet(endPointApi.statuses, params).then(({ data }) => {
+    statusesPromise = apiGet(endPointApi.statuses, params).then(({ data }: any) => {
       cachedStatuses = data;
       cachedStatusesTime = Date.now();
       statusesPromise = null;
       return data;
-    }).catch(err => {
+    }).catch((err: any) => {
       statusesPromise = null;
       throw err;
     });

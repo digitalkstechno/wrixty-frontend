@@ -34,12 +34,12 @@ export const fetchReasonToCalls = async (params?: FetchParams): Promise<Paginate
   if (params?.page === 1 && params?.limit === 100 && !params?.search) {
     if (cachedReasonToCalls && Date.now() - cachedReasonToCallsTime < CACHE_TTL) return cachedReasonToCalls;
     if (reasonToCallsPromise) return reasonToCallsPromise;
-    reasonToCallsPromise = apiGet(endPointApi.reasonToCalls, params).then(({ data }) => {
+    reasonToCallsPromise = apiGet(endPointApi.reasonToCalls, params).then(({ data }: any) => {
       cachedReasonToCalls = data;
       cachedReasonToCallsTime = Date.now();
       reasonToCallsPromise = null;
       return data;
-    }).catch(err => {
+    }).catch((err: any) => {
       reasonToCallsPromise = null;
       throw err;
     });

@@ -42,12 +42,12 @@ export const fetchUsers = async (params?: FetchParams): Promise<PaginatedRespons
   if (params?.page === 1 && params?.limit === 100 && !params?.search) {
     if (cachedUsers && Date.now() - cachedUsersTime < CACHE_TTL) return cachedUsers;
     if (usersPromise) return usersPromise;
-    usersPromise = apiGet(endPointApi.users, params).then(({ data }) => {
+    usersPromise = apiGet(endPointApi.users, params).then(({ data }: any) => {
       cachedUsers = data;
       cachedUsersTime = Date.now();
       usersPromise = null;
       return data;
-    }).catch(err => {
+    }).catch((err: any) => {
       usersPromise = null;
       throw err;
     });

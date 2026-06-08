@@ -34,12 +34,12 @@ export const fetchCouriers = async (params?: FetchParams): Promise<PaginatedResp
   if (params?.page === 1 && params?.limit === 100 && !params?.search) {
     if (cachedCouriers && Date.now() - cachedCouriersTime < CACHE_TTL) return cachedCouriers;
     if (couriersPromise) return couriersPromise;
-    couriersPromise = apiGet(endPointApi.couriers, params).then(({ data }) => {
+    couriersPromise = apiGet(endPointApi.couriers, params).then(({ data }: any) => {
       cachedCouriers = data;
       cachedCouriersTime = Date.now();
       couriersPromise = null;
       return data;
-    }).catch(err => {
+    }).catch((err: any) => {
       couriersPromise = null;
       throw err;
     });
