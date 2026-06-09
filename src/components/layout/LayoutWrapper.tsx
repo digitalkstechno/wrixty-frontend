@@ -31,7 +31,8 @@ import {
   KeyboardArrowRight,
   Apps,
   Spa,
-  Description
+  Description,
+  ViewKanban
 } from "@mui/icons-material";
 
 export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -191,19 +192,20 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
         <aside className="hidden lg:flex flex-col w-64 border-r border-border-ui bg-card-bg shrink-0 h-full overflow-hidden">
           <div className="h-16 flex items-center px-6 border-b border-border-ui shrink-0 gap-2 bg-gradient-to-b from-primary-teal/5 to-transparent">
             {settings.appLogo ? (
-              <img src={settings.appLogo} alt="Logo" className="w-8 h-8 object-contain" />
+              <img src={settings.appLogo} alt="Logo" className="w-46 h-46 object-contain" />
             ) : (
-              <Spa className="text-primary-teal w-6 h-6" />
+              <Spa className="text-primary-teal w-18 h-18" />
             )}
-            <span className="font-extrabold text-lg tracking-wider text-gradient-primary font-sans line-clamp-1">
+            {/* <span className="font-extrabold text-lg tracking-wider text-gradient-primary font-sans line-clamp-1">
               {settings.appName}
-            </span>
+            </span> */}
           </div>
 
           {/* Sidebar navigation list: matches screenshot exactly */}
           <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 no-scrollbar">
             {hasPermission("Dashboard-view") && renderLink("Dashboards", "/dashboard", <DashboardIcon className="w-4.5 h-4.5" />)}
             {hasPermission("Lead-list") && renderLink("Lead", "/lead-list", <People className="w-4.5 h-4.5" />)}
+            {hasPermission("Kanban-view") && renderLink("Kanban", "/kanban-list", <ViewKanban className="w-4.5 h-4.5" />)}
             {hasPermission("Restore-lead-list") && renderLink("Restore Lead", "/restore-data", <RestoreFromTrash className="w-4.5 h-4.5" />)}
             {hasPermission("Order-edit") && renderLink("Order", "/order-list", <ShoppingCart className="w-4.5 h-4.5" />)}
             {hasPermission("Activity-log") && renderLink("Activity Log", "/activity-log", <History className="w-4.5 h-4.5" />)}
@@ -282,9 +284,9 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
             <aside className="relative flex flex-col w-64 max-w-xs bg-card-bg border-r border-border-ui animate-slide-in h-full overflow-hidden">
               <div className="h-16 flex items-center px-6 border-b border-border-ui shrink-0 gap-2">
                 {settings.appLogo ? (
-                  <img src={settings.appLogo} alt="Logo" className="w-8 h-8 object-contain" />
+                  <img src={settings.appLogo} alt="Logo" className="w-36 h-auto max-h-12 object-contain" />
                 ) : (
-                  <Spa className="text-primary-teal w-6 h-6" />
+                  <Spa className="text-primary-teal w-8 h-8" />
                 )}
                 <span className="font-extrabold text-lg text-gradient-primary line-clamp-1">{settings.appName}</span>
                 <button onClick={() => setSidebarOpen(false)} className="ml-auto text-text-secondary hover:text-text-primary">
@@ -295,6 +297,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
               <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 no-scrollbar">
                 {hasPermission("Dashboard-view") && renderLink("Dashboards", "/dashboard", <DashboardIcon className="w-4.5 h-4.5" />)}
                 {hasPermission("Lead-list") && renderLink("Lead", "/lead-list", <People className="w-4.5 h-4.5" />)}
+                {hasPermission("Kanban-view") && renderLink("Kanban", "/kanban-list", <ViewKanban className="w-4.5 h-4.5" />)}
                 {hasPermission("Restore-lead-list") && renderLink("Restore Lead", "/restore-data", <RestoreFromTrash className="w-4.5 h-4.5" />)}
                 {hasPermission("Order-edit") && renderLink("Order", "/order-list", <ShoppingCart className="w-4.5 h-4.5" />)}
                 {hasPermission("Activity-log") && renderLink("Activity Log", "/activity-log", <History className="w-4.5 h-4.5" />)}

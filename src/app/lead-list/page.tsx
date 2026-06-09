@@ -594,16 +594,7 @@ export default function LeadListPage() {
                 loadLeadsData(undefined, undefined, { start, end });
               }}
             />
-            {hasPermission("Kanban-view") && (
-              <button
-                onClick={() => router.push("/kanban-list")}
-                className="p-2.5 bg-white border border-border-ui/50 text-text-secondary hover:text-primary-teal hover:border-primary-teal/50 rounded-lg transition-all shadow-sm flex items-center gap-2 font-bold text-sm"
-                title="View Kanban"
-              >
-                <ViewKanban className="w-5 h-5" />
-                <span>Kanban</span>
-              </button>
-            )}
+
             {hasPermission("Lead-add") && (
               <Button
                 onClick={() => { setActiveLead(null); setLeadFormModalOpen(true); }}

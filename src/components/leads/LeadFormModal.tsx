@@ -27,6 +27,7 @@ interface LeadFormModalProps {
   products: any[];
   statusesOptions: any[];
   reasonCallOptions: any[];
+  defaultStatus?: string;
 }
 
 export const LeadFormModal: React.FC<LeadFormModalProps> = ({
@@ -37,7 +38,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   users,
   products,
   statusesOptions,
-  reasonCallOptions
+  reasonCallOptions,
+  defaultStatus
 }) => {
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -134,7 +136,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         // Add Mode
         setName("");
         setPhone("");
-        setStatus(statusesOptions[0]?._id || statusesOptions[0]?.id || "");
+        setStatus(defaultStatus || statusesOptions[0]?._id || statusesOptions[0]?.id || "");
         setStatusTwo(reasonCallOptions[0]?._id || reasonCallOptions[0]?.id || "");
         setNoteText("");
         setReminder("");
@@ -159,7 +161,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
       }
       setCurrentSelectedProductId(products[0]?._id || products[0]?.id || "");
     }
-  }, [isOpen, activeLead, users, products, statusesOptions, reasonCallOptions, currentUser]);
+  }, [isOpen, activeLead, users, products, statusesOptions, reasonCallOptions, currentUser, defaultStatus]);
 
   // Auto-fill logic when phone number reaches 10 digits
   useEffect(() => {
@@ -197,7 +199,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
           } else {
             // Reset fields for new lead
             setIsRepeatMode(false);
-            setStatus(statusesOptions[0]?._id || statusesOptions[0]?.id || "");
+            setStatus(defaultStatus || statusesOptions[0]?._id || statusesOptions[0]?.id || "");
             setStatusTwo(reasonCallOptions[0]?._id || reasonCallOptions[0]?.id || "");
             setNoteText("");
             setOrderStatus(false);
@@ -208,7 +210,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
           }
         } catch (error) {
           setIsRepeatMode(false);
-          setStatus(statusesOptions[0]?._id || statusesOptions[0]?.id || "");
+          setStatus(defaultStatus || statusesOptions[0]?._id || statusesOptions[0]?.id || "");
           setStatusTwo(reasonCallOptions[0]?._id || reasonCallOptions[0]?.id || "");
           setNoteText("");
           setOrderStatus(false);
@@ -222,7 +224,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
     } else if (isOpen && !activeLead && phone && phone.length < 10) {
       // Reset form if phone is incomplete
       setIsRepeatMode(false);
-      setStatus(statusesOptions[0]?._id || statusesOptions[0]?.id || "");
+      setStatus(defaultStatus || statusesOptions[0]?._id || statusesOptions[0]?.id || "");
       setStatusTwo(reasonCallOptions[0]?._id || reasonCallOptions[0]?.id || "");
       setNoteText("");
       setOrderStatus(false);
@@ -401,7 +403,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                   setPhone("");
                   // Reset form if customer has no phone
                   setIsRepeatMode(false);
-                  setStatus(statusesOptions[0]?._id || statusesOptions[0]?.id || "");
+                  setStatus(defaultStatus || statusesOptions[0]?._id || statusesOptions[0]?.id || "");
                   setStatusTwo(reasonCallOptions[0]?._id || reasonCallOptions[0]?.id || "");
                   setNoteText("");
                   setOrderStatus(false);

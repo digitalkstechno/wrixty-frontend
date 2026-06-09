@@ -5,13 +5,24 @@ import { fetchStatuses } from "../../services/statusService";
 import { fetchLeads, updateLeadApi } from "../../services/leadService";
 import { fetchUsers } from "../../services/userService";
 import { usePermission } from "../../utils/permissionUtils";
+import { LeadFormModal } from "../../components/leads/LeadFormModal";
+import { fetchProducts } from "../../services/productService";
+import { fetchReasonToCalls } from "../../services/reasonToCallService";
+import { Button } from "../../components/common/Button";
+import { FiEdit, FiPlus } from "react-icons/fi";
 
 export default function KanbanListPage() {
   const { hasPermission } = usePermission();
   const [statuses, setStatuses] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [reasonsOptions, setReasonsOptions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [leadFormModalOpen, setLeadFormModalOpen] = useState(false);
+  const [activeLead, setActiveLead] = useState<any>(null);
+  const [defaultStatusId, setDefaultStatusId] = useState<string>("");
 
   const [columnPages, setColumnPages] = useState<Record<string, number>>({});
   const [hasMore, setHasMore] = useState<Record<string, boolean>>({});
@@ -39,12 +50,16 @@ export default function KanbanListPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [statusesRes, usersRes] = await Promise.all([
+        const [statusesRes, usersRes, productsRes, reasonsRes] = await Promise.all([
           fetchStatuses({ page: 1, limit: 100 }),
-          fetchUsers({ page: 1, limit: 100 })
+          fetchUsers({ page: 1, limit: 100 }),
+          fetchProducts({ page: 1, limit: 100 }),
+          fetchReasonToCalls({ page: 1, limit: 100 })
         ]);
         setStatuses(statusesRes.data);
         setUsers(usersRes.data);
+        setProducts(productsRes.data);
+        setReasonsOptions(reasonsRes.data);
 
         const initialPages: Record<string, number> = {};
         const initialHasMore: Record<string, boolean> = {};
@@ -69,7 +84,7 @@ export default function KanbanListPage() {
       }
     };
     loadData();
-  }, []);
+  }, [leadFormModalOpen]);
 
   const loadMoreLeads = async (stageId: string) => {
     setIsFetchingColumn(prev => ({ ...prev, [stageId]: true }));
@@ -151,14 +166,37 @@ export default function KanbanListPage() {
 
   return (
     <div className="space-y-6">
+      <LeadFormModal
+        key={leadFormModalOpen ? (activeLead ? activeLead.id : 'new-lead') : 'closed'}
+        isOpen={leadFormModalOpen}
+        onClose={() => { setLeadFormModalOpen(false); setDefaultStatusId(""); }}
+        onSuccess={() => { setLeadFormModalOpen(false); setDefaultStatusId(""); }}
+        activeLead={activeLead}
+        users={users}
+        products={products}
+        statusesOptions={statuses}
+        reasonCallOptions={reasonsOptions}
+        defaultStatus={defaultStatusId}
+      />
       {/* Header Panel */}
-      <div className="space-y-1">
-        <h2 className="text-2xl font-bold text-[#1f2f3e]">
-          Kanban Board
-        </h2>
-        <p className="text-sm text-text-secondary font-medium tracking-wide">
-          Quickly advance leads across stages visually via drag & drop
-        </p>
+      <div className="flex justify-between items-start">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold text-[#1f2f3e]">
+            Kanban Board
+          </h2>
+          <p className="text-sm text-text-secondary font-medium tracking-wide">
+            Quickly advance leads across stages visually via drag & drop
+          </p>
+        </div>
+        {hasPermission("Lead-add") && (
+          <Button
+            onClick={() => { setActiveLead(null); setDefaultStatusId(""); setLeadFormModalOpen(true); }}
+            variant="primary"
+            className="rounded-lg px-6"
+          >
+            Add Lead
+          </Button>
+        )}
       </div>
 
       {/* Board Scrollable container */}
@@ -182,9 +220,24 @@ export default function KanbanListPage() {
                     {stage.name}
                   </h4>
                 </div>
-                <span className="text-xs font-bold px-2.5 py-1 bg-background text-[#1f2f3e] rounded-lg border border-border-ui">
-                  {stageLeads.length}
-                </span>
+                <div className="flex items-center gap-2">
+                  {hasPermission("Lead-add") && (
+                    <button
+                      onClick={() => {
+                        setDefaultStatusId(stage._id || stage.id);
+                        setActiveLead(null);
+                        setLeadFormModalOpen(true);
+                      }}
+                      className="p-1 hover:bg-background rounded text-text-secondary hover:text-primary-teal transition-colors"
+                      title={`Add Lead to ${stage.name}`}
+                    >
+                      <FiPlus className="w-4 h-4" />
+                    </button>
+                  )}
+                  <span className="text-xs font-bold px-2.5 py-1 bg-background text-[#1f2f3e] rounded-lg border border-border-ui">
+                    {stageLeads.length}
+                  </span>
+                </div>
               </div>
 
               {/* Cards List */}
@@ -212,9 +265,19 @@ export default function KanbanListPage() {
 
                       {/* Default Visible Content */}
                       <div className="pl-4 space-y-1">
-                        <h5 className="text-[14px] font-semibold text-[#1f2f3e] tracking-wide capitalize">
-                          {lead.name || lead.assginName || "-"}
-                        </h5>
+                        <div className="flex justify-between items-start">
+                          <h5 className="text-[14px] font-semibold text-[#1f2f3e] tracking-wide capitalize">
+                            {lead.name || lead.assginName || "-"}
+                          </h5>
+                          {hasPermission("Lead-edit") && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setActiveLead(lead); setLeadFormModalOpen(true); }}
+                              className="text-text-secondary hover:text-primary-teal p-1"
+                            >
+                              <FiEdit className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                         <div className="flex flex-col gap-0.5">
                           {lead.assginName && (
                              <p className="text-[14px] font-semibold text-[#1f2f3e] tracking-wide capitalize">
