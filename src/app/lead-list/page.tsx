@@ -409,7 +409,7 @@ export default function LeadListPage() {
     try {
       await createOrderApi({
         leadId: activeLead.id,
-        name: activeLead.name,
+        name: activeLead.name || "Unknown",
         phone_number: activeLead.phone_number,
         products: convertSelectedProducts,
         amount: convertTotalAmount,
@@ -421,7 +421,8 @@ export default function LeadListPage() {
         transactionId,
         status: "Dispatched"
       } as any);
-      toast.success(`Successfully converted ${activeLead.name} to order!`);
+      await updateLeadApi(activeLead.id, { orderStatus: true });
+      toast.success(`Successfully converted ${activeLead.name || "Unknown"} to order!`);
       setConvertModalOpen(false);
       loadLeadsData();
     } catch (err: any) {

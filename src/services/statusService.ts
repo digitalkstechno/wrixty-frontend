@@ -65,6 +65,12 @@ export const createStatus = async (payload: CreateStatusPayload): Promise<Status
   return data;
 };
 
+// PUT /api/statuses/reorder
+export const reorderStatuses = async (payload: { statuses: { id: string, order: number }[] }): Promise<void> => {
+  clearStatusCache();
+  await apiPut(`${endPointApi.statuses}/reorder`, '', payload);
+};
+
 // PUT /api/statuses/:id
 export const updateStatus = async (id: string, payload: UpdateStatusPayload): Promise<Status> => {
   clearStatusCache();

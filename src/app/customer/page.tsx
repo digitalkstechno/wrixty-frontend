@@ -56,7 +56,6 @@ export default function CustomerPage() {
 
   const validate = () => {
     const errors: { name?: string, phone?: string } = {};
-    if (!name.trim()) errors.name = "Name is required";
     if (!phone.trim()) {
       errors.phone = "Phone is required";
     } else if (phone.length !== 10) {

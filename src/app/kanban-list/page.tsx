@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { fetchStatuses } from "../../services/statusService";
+import { fetchStatuses, reorderStatuses } from "../../services/statusService";
 import { fetchLeads, updateLeadApi } from "../../services/leadService";
 import { fetchUsers } from "../../services/userService";
 import { usePermission } from "../../utils/permissionUtils";
@@ -27,6 +27,10 @@ export default function KanbanListPage() {
   const [columnPages, setColumnPages] = useState<Record<string, number>>({});
   const [hasMore, setHasMore] = useState<Record<string, boolean>>({});
   const [isFetchingColumn, setIsFetchingColumn] = useState<Record<string, boolean>>({});
+
+  // Drag and Drop State for Columns
+  const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
+  const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
 
   const mapLead = (l: any, usersList: any[]) => {
     const usersLookup: Record<string, { name: string; email: string }> = {};
@@ -56,10 +60,11 @@ export default function KanbanListPage() {
           fetchProducts({ page: 1, limit: 100 }),
           fetchReasonToCalls({ page: 1, limit: 100 })
         ]);
-        setStatuses(statusesRes.data);
         setUsers(usersRes.data);
         setProducts(productsRes.data);
         setReasonsOptions(reasonsRes.data);
+
+        setStatuses(statusesRes.data);
 
         const initialPages: Record<string, number> = {};
         const initialHasMore: Record<string, boolean> = {};
@@ -164,6 +169,51 @@ export default function KanbanListPage() {
     setDraggedLeadId(null);
   };
 
+  const handleColumnDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
+    setDraggedColumnId(id);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/column", id);
+  };
+
+  const handleColumnDragOver = (e: React.DragEvent<HTMLDivElement>, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (draggedColumnId && draggedColumnId !== id) {
+      setDragOverColumnId(id);
+    }
+  };
+
+  const handleColumnDrop = async (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
+    e.preventDefault();
+    setDragOverColumnId(null);
+    if (!draggedColumnId || draggedColumnId === targetId) {
+      setDraggedColumnId(null);
+      return;
+    }
+    
+    const draggedIdx = statuses.findIndex(s => (s._id || s.id) === draggedColumnId);
+    const targetIdx = statuses.findIndex(s => (s._id || s.id) === targetId);
+    
+    if (draggedIdx !== -1 && targetIdx !== -1) {
+      const newStatuses = [...statuses];
+      const [draggedItem] = newStatuses.splice(draggedIdx, 1);
+      newStatuses.splice(targetIdx, 0, draggedItem);
+      setStatuses(newStatuses);
+      
+      const newOrderPayload = newStatuses.map((s, index) => ({
+        id: s._id || s.id,
+        order: index
+      }));
+      
+      try {
+        await reorderStatuses({ statuses: newOrderPayload });
+      } catch (err) {
+        console.error("Failed to persist column order to backend", err);
+      }
+    }
+    setDraggedColumnId(null);
+  };
+
   return (
     <div className="space-y-6">
       <LeadFormModal
@@ -208,9 +258,34 @@ export default function KanbanListPage() {
           return (
             <div
               key={stage.id || stage._id}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, stage)}
-              className="w-80 shrink-0 bg-white border border-border-ui rounded-lg p-4 space-y-4 shadow-sm"
+              draggable={true}
+              onDragStart={(e) => handleColumnDragStart(e, stage._id || stage.id)}
+              onDragOver={(e) => {
+                if (draggedLeadId) {
+                  handleDragOver(e);
+                } else if (draggedColumnId) {
+                  handleColumnDragOver(e, stage._id || stage.id);
+                }
+              }}
+              onDragLeave={() => {
+                if (draggedColumnId) setDragOverColumnId(null);
+              }}
+              onDrop={(e) => {
+                if (draggedLeadId) {
+                  handleDrop(e, stage);
+                } else if (draggedColumnId) {
+                  handleColumnDrop(e, stage._id || stage.id);
+                }
+              }}
+              onDragEnd={() => {
+                setDraggedColumnId(null);
+                setDragOverColumnId(null);
+              }}
+              className={`w-80 shrink-0 bg-white border rounded-lg p-4 space-y-4 shadow-sm cursor-grab active:cursor-grabbing transition-all ${
+                draggedColumnId === (stage._id || stage.id) ? 'opacity-50 border-dashed bg-background border-border-ui' : 'border-border-ui'
+              } ${
+                dragOverColumnId === (stage._id || stage.id) ? 'border-l-4 border-l-primary-teal scale-[1.02]' : ''
+              }`}
             >
               {/* Header */}
               <div className="flex items-center justify-between border-b border-border-ui pb-2">
@@ -250,7 +325,10 @@ export default function KanbanListPage() {
                     <div
                       key={lead.id}
                       draggable={hasPermission("Kanban-update")}
-                      onDragStart={(e) => handleDragStart(e, lead.id)}
+                      onDragStart={(e) => {
+                        e.stopPropagation();
+                        handleDragStart(e, lead.id);
+                      }}
                       className={`group relative p-4 bg-background/50 border border-border-ui/50 rounded-lg shadow-sm text-left transition-all ${
                         hasPermission("Kanban-update") 
                           ? "cursor-grab active:cursor-grabbing hover:shadow-md hover:border-primary-teal/30" 

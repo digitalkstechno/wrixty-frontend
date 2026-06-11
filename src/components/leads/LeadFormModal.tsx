@@ -303,16 +303,12 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone || !status || !statusTwo || !assignee) {
-      toast.warning("Please fill all compulsory fields (Name, Phone, Status, Reason Call, Assign Staff)!");
+    if (!phone || !status || !assignee) {
+      toast.warning("Please fill all compulsory fields (Phone, Status, Assign Staff)!");
       return;
     }
     if (phone.length !== 10) {
       toast.warning("Phone number must be exactly 10 digits!");
-      return;
-    }
-    if (orderStatus && !selectedCourier) {
-      toast.warning("Please select a Courier Partner!");
       return;
     }
     if (modalSelectedProducts.length === 0) {
@@ -356,7 +352,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
           try {
             await createOrderApi({
               leadId: (createdLead as any)._id,
-              name,
+              name: name || "Unknown",
               phone_number: phone,
               products: leadPayload.products,
               paymentType,
@@ -413,7 +409,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                   }
                 }
               }}
-              required
               allowCustom={true}
               options={customers.map(c => ({ value: c.name, label: c.name }))}
             />
@@ -437,7 +432,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             label="Reason Call"
             value={statusTwo}
             onChange={(e) => setStatusTwo(e.target.value)}
-            required
             options={[
               { value: "", label: "Select Reason" },
               ...reasonCallOptions.map(r => ({ value: r._id || r.id, label: r.name }))
@@ -505,7 +499,6 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
               label="Courier Partner"
               value={selectedCourier}
               onChange={(e) => setSelectedCourier(e.target.value)}
-              required
               options={[
                 { value: "", label: "Select Courier Partner" },
                 ...couriers.map(c => ({ value: c.name, label: c.name }))
