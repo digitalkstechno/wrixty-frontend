@@ -175,7 +175,7 @@ export function Table<T extends Record<string, any>>({
               placeholder={searchPlaceholder}
               value={internalSearch}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full px-4 py-2 text-sm bg-white border border-border-ui text-text-primary rounded-lg outline-none focus:border-primary-teal focus:ring-1 focus:ring-primary-teal/20"
+              className="w-full px-4 py-2 text-sm bg-card-bg border border-border-ui text-text-primary rounded-lg outline-none focus:border-primary-teal focus:ring-1 focus:ring-primary-teal/20 transition-all"
             />
           </div>
           <div className="text-sm text-text-secondary">
@@ -185,7 +185,7 @@ export function Table<T extends Record<string, any>>({
       )}
 
       {/* Table Element */}
-      <div className="w-full overflow-x-auto bg-white border border-border-ui rounded-lg shadow-soft">
+      <div className="w-full overflow-x-auto bg-card-bg border border-border-ui rounded-lg shadow-soft">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-background/80 border-b border-border-ui">
@@ -250,7 +250,7 @@ export function Table<T extends Record<string, any>>({
                       </td>
                     )}
                     {columns.map((col, colIdx) => (
-                      <td key={`${rowId}-${col.key}-${colIdx}`} className="p-3 text-[14px] font-semibold text-[#1f2f3e] tracking-wide">
+                      <td key={`${rowId}-${col.key}-${colIdx}`} className="p-3 text-[14px] font-semibold text-text-primary tracking-wide">
                         {col.render ? col.render(row[col.key], row, rowIndex) : String(row[col.key] ?? "")}
                       </td>
                     ))}
@@ -277,7 +277,7 @@ export function Table<T extends Record<string, any>>({
               <select
                 value={activeLimit}
                 onChange={(e) => handleLimitChange(Number(e.target.value))}
-                className="appearance-none bg-white border border-border-ui px-3 py-1.5 pr-8 rounded text-sm font-medium text-text-primary focus:outline-none focus:border-primary-teal transition-colors cursor-pointer"
+                className="appearance-none bg-card-bg border border-border-ui px-3 py-1.5 pr-8 rounded text-sm font-medium text-text-primary focus:outline-none focus:border-primary-teal transition-colors cursor-pointer"
               >
                 {[5, 10, 20, 50].map((v) => (
                   <option key={v} value={v}>{v}</option>

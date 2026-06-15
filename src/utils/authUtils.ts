@@ -26,6 +26,8 @@ export const setAuthData = (user: any) => {
   }
 };
 
+export const setAuthenticatedUser = setAuthData;
+
 export const clearAuthData = () => {
   if (typeof window !== "undefined") {
     localStorage.removeItem("wrixty_authenticated");

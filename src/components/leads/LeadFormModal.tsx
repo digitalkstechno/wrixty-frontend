@@ -71,7 +71,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   useEffect(() => {
     if (isOpen && couriers.length === 0) {
       fetchCouriers({ limit: 100, page: 1 }).then(res => {
-        if (res && res.data) setCouriers(res.data);
+        if (res && res.data) {
+          setCouriers(res.data);
+          if (res.data.length > 0 && !activeLead) setSelectedCourier(res.data[0].name);
+        }
       }).catch(err => console.error(err));
     }
 
@@ -142,14 +145,17 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         setReminder("");
         setOrderStatus(false);
         setPaymentType("COD");
-        setSelectedCourier("");
+        setSelectedCourier(couriers.length > 0 ? couriers[0].name : "");
         setTransactionId("");
         setModalSelectedProducts([]);
         setIsRepeatMode(false);
 
         // Handle Default Assignee
         if (currentUser) {
-          if (!isAdmin) {
+          const isManager = currentUser.roles?.some((r: string) => 
+            ['manager', 'main manager', 'maneger', 'main maneger'].includes(r.toLowerCase())
+          );
+          if (!isAdmin && !isManager) {
             const loggedInMember = users.find(u => u._id === currentUser?._id || u.id === currentUser?._id || (currentUser?.email && u.email?.toLowerCase() === currentUser?.email?.toLowerCase()));
             setAssignee(loggedInMember?._id || loggedInMember?.id || currentUser?._id || currentUser?.id || "");
           } else {
@@ -164,38 +170,65 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   }, [isOpen, activeLead, users, products, statusesOptions, reasonCallOptions, currentUser, defaultStatus]);
 
   // Auto-fill logic when phone number reaches 10 digits
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateLeadData, setDuplicateLeadData] = useState<any | null>(null);
+
+  const handleDuplicateProceed = () => {
+    const prevLead = duplicateLeadData;
+    if (!prevLead) return;
+
+    setName(prevLead.name || "");
+    setStatus((prevLead.status as any)?._id || prevLead.status || "");
+    setStatusTwo((prevLead.reason_call as any)?._id || prevLead.reason_call || "");
+    setNoteText(prevLead.note || "");
+
+    // Assign Staff logic: Admin can see previous staff, Staff is forced to themselves
+    if (isAdmin) {
+      setAssignee((prevLead.assgin as any)?._id || prevLead.assgin || "");
+    } else {
+      setAssignee(currentUser?._id || currentUser?.id || "");
+    }
+    setOrderStatus(Boolean(prevLead.orderStatus));
+
+    if (prevLead.products && prevLead.products.length > 0) {
+      setModalSelectedProducts(prevLead.products.map((p: any) => ({
+        productId: p.productId?._id || p.productId,
+        name: p.productId?.name || p.name || "",
+        amount: p.amount || 0,
+        quantity: p.quantity || 1,
+        subtotal: p.subtotal || 0
+      })));
+    } else {
+      setModalSelectedProducts([]);
+    }
+    setIsRepeatMode(true);
+    toast.success("Previous lead found. Form auto-filled and set to repeat mode.");
+    setShowDuplicateDialog(false);
+  };
+
+  const handleDuplicateCancel = () => {
+    setShowDuplicateDialog(false);
+    setPhone("");
+    // Reset fields for new lead
+    setIsRepeatMode(false);
+    setStatus(defaultStatus || statusesOptions[0]?._id || statusesOptions[0]?.id || "");
+    setStatusTwo(reasonCallOptions[0]?._id || reasonCallOptions[0]?.id || "");
+    setNoteText("");
+    setOrderStatus(false);
+    setModalSelectedProducts([]);
+    if (!isAdmin && currentUser) {
+      setAssignee(currentUser?._id || currentUser?.id || "");
+    }
+  };
+
   useEffect(() => {
     if (isOpen && !activeLead && phone && phone.length === 10) {
       const checkPreviousLead = async () => {
         try {
           const prevLead = await fetchLatestLeadByPhone(phone);
           if (prevLead) {
-            setName(prevLead.name || "");
-            setStatus((prevLead.status as any)?._id || prevLead.status || "");
-            setStatusTwo((prevLead.reason_call as any)?._id || prevLead.reason_call || "");
-            setNoteText(prevLead.note || "");
-
-            // Assign Staff logic: Admin can see previous staff, Staff is forced to themselves
-            if (isAdmin) {
-              setAssignee((prevLead.assgin as any)?._id || prevLead.assgin || "");
-            } else {
-              setAssignee(currentUser?._id || currentUser?.id || "");
-            }
-            setOrderStatus(Boolean(prevLead.orderStatus));
-
-            if (prevLead.products && prevLead.products.length > 0) {
-              setModalSelectedProducts(prevLead.products.map((p: any) => ({
-                productId: p.productId?._id || p.productId,
-                name: p.productId?.name || p.name || "",
-                amount: p.amount || 0,
-                quantity: p.quantity || 1,
-                subtotal: p.subtotal || 0
-              })));
-            } else {
-              setModalSelectedProducts([]);
-            }
-            setIsRepeatMode(true);
-            toast.success("Previous lead found. Form auto-filled and set to repeat mode.");
+            setDuplicateLeadData(prevLead);
+            setShowDuplicateDialog(true);
           } else {
             // Reset fields for new lead
             setIsRepeatMode(false);
@@ -303,8 +336,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone || !status || !statusTwo || !assignee) {
-      toast.warning("Please fill all compulsory fields (Name, Phone, Status, Reason Call, Assign Staff)!");
+    if (!phone || !status || !statusTwo || !assignee) {
+      toast.warning("Please fill all compulsory fields (Phone, Status, Reason Call, Assign Staff)!");
       return;
     }
     if (phone.length !== 10) {
@@ -382,40 +415,19 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={activeLead ? "Edit Lead Details" : "Add New Lead"} isLoading={isLoading} sizeClass="max-w-6xl">
-      <form onSubmit={handleSubmit} className="space-y-6 text-left max-w-5xl mx-auto pr-1">
-        {/* <p className="text-sm text-text-secondary font-semibold">Fill out the details to {activeLead ? 'update the' : 'register a new'} lead in the system.</p> */}
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} title={activeLead ? "Edit Lead Details" : "Add New Lead"} isLoading={isLoading} sizeClass="max-w-6xl">
+        <form onSubmit={handleSubmit} className="space-y-6 text-left max-w-5xl mx-auto pr-1">
+          {/* <p className="text-sm text-text-secondary font-semibold">Fill out the details to {activeLead ? 'update the' : 'register a new'} lead in the system.</p> */ }
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <Select
+            <Input
               label="Name"
+              type="text"
               value={name}
-              onChange={(e) => {
-                const selVal = e.target.value;
-                setName(selVal);
-
-                const selected = customers.find(c => c.name === selVal);
-                if (selected?.phone_number) {
-                  const safePhone = selected.phone_number.replace(/\D/g, "").slice(0, 10);
-                  setPhone(safePhone);
-                } else {
-                  setPhone("");
-                  // Reset form if customer has no phone
-                  setIsRepeatMode(false);
-                  setStatus(defaultStatus || statusesOptions[0]?._id || statusesOptions[0]?.id || "");
-                  setStatusTwo(reasonCallOptions[0]?._id || reasonCallOptions[0]?.id || "");
-                  setNoteText("");
-                  setOrderStatus(false);
-                  setModalSelectedProducts([]);
-                  if (!isAdmin && currentUser) {
-                    setAssignee(currentUser?._id || currentUser?.id || "");
-                  }
-                }
-              }}
-              required
-              allowCustom={true}
-              options={customers.map(c => ({ value: c.name, label: c.name }))}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter Customer Name"
             />
           </div>
           <div>
@@ -461,13 +473,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             value={assignee}
             onChange={(e) => setAssignee(e.target.value)}
             required
-            disabled={!isAdmin}
+            disabled={!isAdmin && (!currentUser?.roles?.some((r: string) => ['manager', 'main manager', 'maneger', 'main maneger'].includes(r.toLowerCase())))}
             options={[
               { value: "", label: "Select User" },
-              ...(isAdmin
-                ? users
-                : users.filter(u => u._id === currentUser?._id || u.id === currentUser?._id || (currentUser?.email && u.email?.toLowerCase() === currentUser?.email?.toLowerCase()))
-              ).map(u => ({ value: u._id || u.id, label: u.name }))
+              ...users.map(u => ({ value: u._id || u.id, label: u.name }))
             ]}
           />
           <Input label="Note" value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Enter Note" />
@@ -502,14 +511,11 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
               </div>
             </div>
             <Select
-              label="Courier Partner"
+              label="Courier Partner *"
               value={selectedCourier}
               onChange={(e) => setSelectedCourier(e.target.value)}
               required
-              options={[
-                { value: "", label: "Select Courier Partner" },
-                ...couriers.map(c => ({ value: c.name, label: c.name }))
-              ]}
+              options={couriers.map(c => ({ value: c.name, label: c.name }))}
             />
             <Input
               label="Transaction ID"
@@ -521,8 +527,8 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         )}
 
         <div className="border-t border-zinc-150 pt-6 space-y-4">
-          <h4 className="text-lg font-bold text-zinc-800">Choose Products to Add</h4>
-          <div className="flex gap-4 items-end bg-zinc-50 p-4 rounded-xl border border-zinc-200">
+          <h4 className="text-lg font-bold text-zinc-800 dark:text-zinc-100">Choose Products to Add</h4>
+          <div className="flex gap-4 items-end bg-zinc-50 dark:bg-zinc-800/80 p-4 rounded-xl border border-zinc-200 dark:border-border-ui">
             <div className="flex-1">
               <Select
                 label="Search & Select Product"
@@ -542,7 +548,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
 
         <div className="space-y-4 text-left">
           <div className="flex items-center justify-between">
-            <h4 className="text-base font-bold text-zinc-800">
+            <h4 className="text-base font-bold text-zinc-800 dark:text-zinc-100">
               Selected Products
             </h4>
             {selectedRowIds.length > 0 && (
@@ -558,10 +564,10 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
             )}
           </div>
 
-          <div className="border border-zinc-200 overflow-hidden rounded-xl shadow-sm">
+          <div className="border border-zinc-200 dark:border-border-ui overflow-hidden rounded-xl shadow-sm">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-zinc-100/80 border-b border-zinc-200">
+                <tr className="bg-zinc-100/80 dark:bg-zinc-800/80 border-b border-zinc-200 dark:border-border-ui">
                   <th className="p-3 w-12 text-center">
                     <input
                       type="checkbox"
@@ -570,30 +576,30 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                       className="w-4 h-4 text-primary-teal rounded-md border-zinc-300 focus:ring-primary-teal cursor-pointer"
                     />
                   </th>
-                  <th className="p-3 text-xs font-semibold text-zinc-700 uppercase tracking-wide text-left">
+                  <th className="p-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide text-left">
                     Product Name
                   </th>
-                  <th className="p-3 text-xs font-semibold text-zinc-700 uppercase tracking-wide text-left">
+                  <th className="p-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide text-left">
                     Amount
                   </th>
-                  <th className="p-3 text-xs font-semibold text-zinc-700 uppercase tracking-wide text-left">
+                  <th className="p-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide text-left">
                     Quantity
                   </th>
-                  <th className="p-3 text-xs font-semibold text-zinc-700 uppercase tracking-wide text-left">
+                  <th className="p-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide text-left">
                     Subtotal
                   </th>
-                  <th className="p-3 text-xs font-semibold text-zinc-700 uppercase tracking-wide text-center">
+                  <th className="p-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide text-center">
                     Action
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-zinc-200">
+              <tbody className="divide-y divide-zinc-200 dark:divide-border-ui">
                 {modalSelectedProducts.length > 0 ? (
                   modalSelectedProducts.map((row) => (
                     <tr
                       key={row.productId}
-                      className={`hover:bg-zinc-50/80 transition-colors ${selectedRowIds.includes(row.productId) ? 'bg-zinc-50' : ''}`}
+                      className={`hover:bg-zinc-50/80 dark:hover:bg-zinc-700/80 transition-colors ${selectedRowIds.includes(row.productId) ? 'bg-zinc-50 dark:bg-zinc-700/80' : ''}`}
                     >
                       <td className="p-3 text-center">
                         <input
@@ -603,11 +609,11 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                           className="w-4 h-4 text-primary-teal rounded-md border-zinc-300 focus:ring-primary-teal cursor-pointer"
                         />
                       </td>
-                      <td className="p-3 font-medium text-zinc-800 text-sm">
+                      <td className="p-3 font-medium text-zinc-800 dark:text-zinc-100 text-sm">
                         {row.name}
                       </td>
 
-                      <td className="p-3 font-medium text-zinc-700 text-sm">
+                      <td className="p-3 font-medium text-zinc-700 dark:text-zinc-300 text-sm">
                         ₹{row.amount}
                       </td>
 
@@ -619,11 +625,11 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
                           onChange={(e) =>
                             handleQtyChange(row.productId, Number(e.target.value))
                           }
-                          className="w-20 px-2 py-1 text-sm font-medium bg-white border border-zinc-200 rounded-lg focus:ring-1 focus:ring-primary-teal/20 focus:border-primary-teal outline-none text-center shadow-sm"
+                          className="w-20 px-2 py-1 text-sm font-medium text-zinc-800 dark:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-border-ui rounded-lg focus:ring-1 focus:ring-primary-teal/20 focus:border-primary-teal outline-none text-center shadow-sm"
                         />
                       </td>
 
-                      <td className="p-3 font-bold text-zinc-900 text-sm">
+                      <td className="p-3 font-bold text-zinc-900 dark:text-zinc-100 text-sm">
                         ₹{row.subtotal}
                       </td>
 
@@ -655,7 +661,7 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         </div>
 
         <div className="flex items-center justify-between border-t border-zinc-150 pt-4 mt-2">
-          <span className="text-sm font-bold text-zinc-800 bg-zinc-100 px-4 py-2 rounded-lg border border-zinc-200 shadow-sm">
+          <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 px-4 py-2 rounded-lg border border-zinc-200 dark:border-border-ui shadow-sm">
             Total Amount: <span className="text-primary-teal ml-1">₹{totalAmount.toLocaleString()}</span>
           </span>
           <div className="flex gap-3">
@@ -669,5 +675,28 @@ export const LeadFormModal: React.FC<LeadFormModalProps> = ({
         </div>
       </form>
     </Modal>
+
+      {/* Duplicate Lead Confirmation Modal */}
+      <Modal
+        isOpen={showDuplicateDialog}
+        onClose={handleDuplicateCancel}
+        title="Lead Already Assigned"
+        sizeClass="max-w-lg"
+      >
+        <div className="p-6 text-left">
+          <p className="text-base text-zinc-700 dark:text-zinc-300 leading-relaxed">
+            This lead is already assigned to <span className="font-bold text-zinc-900 dark:text-zinc-100">{duplicateLeadData?.assgin?.name || duplicateLeadData?.assgin_name || duplicateLeadData?.assignee_name || duplicateLeadData?.assign?.name || "another staff member"}</span>. Do you want to proceed?
+          </p>
+          <div className="flex justify-end gap-4 mt-8">
+            <Button type="button" variant="outline" onClick={handleDuplicateCancel}>
+              Cancel
+            </Button>
+            <Button type="button" variant="primary" onClick={handleDuplicateProceed} className="px-6">
+              OK
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 };

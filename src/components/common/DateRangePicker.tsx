@@ -215,20 +215,21 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ startDate, end
   };
 
   return (
-    <div className="relative inline-block" ref={popoverRef}>
+    <div className="relative inline-block" ref={popoverRef}>      
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-zinc-700 bg-white border border-zinc-300 rounded-lg shadow-sm hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-teal-500"
+        className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-text-primary bg-card-bg border border-border-ui rounded-lg shadow-sm hover:bg-background focus:outline-none focus:ring-2 focus:ring-teal-500"
       >
         <FiCalendar className="w-4 h-4 text-teal-600" />
         {formatDateLabel(startDate, endDate)}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 bg-white rounded-lg shadow-xl border border-zinc-200 flex flex-col md:flex-row overflow-hidden max-w-[95vw] md:max-w-none md:min-w-max">
+        <div className="absolute right-0 z-50 mt-2 bg-card-bg rounded-lg shadow-xl border border-border-ui flex flex-col md:flex-row overflow-hidden max-w-[95vw] md:max-w-none md:min-w-max">
           
           {/* Presets Sidebar */}
-          <div className="w-full md:w-48 bg-zinc-50 border-r border-zinc-200 flex flex-col py-2">
+          <div className="w-full md:w-48 bg-muted-bg border-r border-border-ui flex flex-col py-2">
             {PRESETS.map((preset) => (
               <button
                 key={preset.label}

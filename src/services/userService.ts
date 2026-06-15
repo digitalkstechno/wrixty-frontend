@@ -10,9 +10,11 @@ export interface User {
   check_photo?: string;
   bank_number: string;
   roles: string[];
+  id?: string;
   password?: string;
   createdAt?: string;
   updatedAt?: string;
+  activeLeadCount?: number;
 }
 
 export interface PaginatedResponse<T> {

@@ -223,7 +223,7 @@ export default function ProductPage() {
         </p>
       </div>
 
-      <div className="bg-white p-6 border border-border-ui rounded-lg shadow-sm space-y-6">
+      <div className="bg-card-bg p-6 border border-border-ui rounded-lg shadow-sm space-y-6">
         {/* Header Block */}
         <div className="pb-4 space-y-3 border-b border-border-ui">
           <div className="flex items-center justify-between">

@@ -5,6 +5,8 @@ import { LayoutWrapper } from "../components/layout/LayoutWrapper";
 import NextTopLoader from "nextjs-toploader";
 import { SettingsProvider } from "../context/SettingsContext";
 
+import { ThemeProvider } from "../context/ThemeContext";
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -46,7 +48,9 @@ export default function RootLayout({
           shadow="0 0 10px #0F766E,0 0 5px #0F766E"
         />
         <SettingsProvider>
-          <LayoutWrapper>{children}</LayoutWrapper>
+          <ThemeProvider>
+            <LayoutWrapper>{children}</LayoutWrapper>
+          </ThemeProvider>
         </SettingsProvider>
       </body>
     </html>

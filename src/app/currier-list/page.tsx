@@ -15,12 +15,13 @@ import {
 } from "../../services/courierService";
 import { usePermission } from "../../utils/permissionUtils";
 import { DeleteConfirmModal } from "../../components/common/DeleteConfirmModal";
+import { useToast } from "../../context/ToastContext";
 
 export default function CourierListPage() {
   const { hasPermission } = usePermission();
+  const toast = useToast();
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Server-side pagination + search
   const [page, setPage] = useState(1);
@@ -41,12 +42,11 @@ export default function CourierListPage() {
   const loadCouriers = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
       const res = await fetchCouriers({ page, limit, search });
       setCouriers(res.data);
       setTotal(res.total);
-    } catch {
-      setError("Failed to load couriers. Make sure the backend is running.");
+    } catch (err: any) {
+      toast.error(`Failed to load couriers. Error: ${err?.message || err?.response?.status || JSON.stringify(err)}`);
     } finally {
       setLoading(false);
     }
@@ -71,9 +71,10 @@ export default function CourierListPage() {
       setModalOpen(false);
       setName("");
       setFormErrors({});
+      toast.success("Courier created successfully.");
       loadCouriers();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to create courier.");
+      toast.error(err?.response?.data?.message || "Failed to create courier.");
     }
   };
 
@@ -94,9 +95,10 @@ export default function CourierListPage() {
       setName("");
       setActiveCourier(null);
       setFormErrors({});
+      toast.success("Courier updated successfully.");
       loadCouriers();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to update courier.");
+      toast.error(err?.response?.data?.message || "Failed to update courier.");
     }
   };
 
@@ -111,9 +113,10 @@ export default function CourierListPage() {
       await deleteCourier(courierToDelete._id);
       setDeleteOpen(false);
       setCourierToDelete(null);
+      toast.success("Courier deleted successfully.");
       loadCouriers();
     } catch {
-      setError("Failed to delete courier.");
+      toast.error("Failed to delete courier.");
     }
   };
 
@@ -175,12 +178,6 @@ export default function CourierListPage() {
           </Button>
         )}
       </div>
-
-      {error && (
-        <div className="text-sm text-rose-500 bg-rose-50 border border-rose-200 rounded px-3 py-2">
-          {error}
-        </div>
-      )}
 
       <Table
         data={couriers}

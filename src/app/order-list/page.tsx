@@ -59,6 +59,7 @@ export default function OrderListPage() {
   const [couriers, setCouriers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isManager, setIsManager] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -152,7 +153,11 @@ export default function OrderListPage() {
       setCurrentUser(user);
       const admin = user?.roles?.some((r: string) => r.toLowerCase().includes('admin'));
       setIsAdmin(admin);
-      if (!admin) {
+      const manager = user?.roles?.some((r: string) => 
+        ['manager', 'main manager', 'maneger', 'main maneger'].includes(r.toLowerCase())
+      );
+      setIsManager(manager);
+      if (!admin && !manager) {
         initialAssigneeFilter = user._id || user.id;
         setFilterAssignee([initialAssigneeFilter]);
       }
@@ -162,10 +167,10 @@ export default function OrderListPage() {
     loadOrdersData(undefined, undefined, initialAssigneeFilter);
   }, []);
 
-  const updateOrder = async (id: string, updated: Partial<Order>) => {
+  const updateOrder = async (id: string, updated: Partial<Order>, localUpdates?: Partial<Order>) => {
     try {
       await updateOrderApi(id, updated as any);
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, ...updated } : o));
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, ...(localUpdates || updated) } : o));
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update order");
     }
@@ -480,7 +485,28 @@ export default function OrderListPage() {
     { key: "date", header: "Date" },
     { key: "paymentType", header: "Payment Type", render: (val) => val || "COD" },
     { key: "courier", header: "Courier" },
-    { key: "assginTo", header: "Assign To" },
+    { 
+      key: "assginTo", 
+      header: "Assign To", 
+      render: (_, row) => (
+        <Select
+          className="min-w-[120px]"
+          menuPortalTarget={true}
+          value={row.assginToId || ""}
+          onChange={(e) => {
+            const newId = e.target.value;
+            const selectedUser = users.find(u => (u._id || u.id) === newId);
+            const newName = selectedUser ? selectedUser.name : "";
+            // Send newId as assginTo to backend, but locally update both name and ID
+            updateOrder(row.id, { assginTo: newId }, { assginTo: newName, assginToId: newId });
+          }}
+          options={[
+            { value: "", label: "Select Assign" },
+            ...users.map(u => ({ value: u._id || u.id, label: u.name }))
+          ]}
+        />
+      )
+    },
     { key: "transactionId", header: "Transaction ID", render: (val) => val || "-" },
     { key: "status", header: "Return Type", render: (val) => val === "Returned" ? val : "-" },
     { key: "repartOrderTotal", header: "Repart Order Total", render: (_, row) => row._products?.length ? row._products.reduce((acc, p) => acc + (p.quantity || 1), 0) : (row.quantity || 1) },
@@ -574,8 +600,8 @@ export default function OrderListPage() {
       </div>
 
       <div className="border-t border-zinc-150 pt-6 space-y-4">
-        <h4 className="text-lg font-bold text-zinc-800">Choose Products to Add</h4>
-        <div className="flex gap-4 items-end bg-zinc-50 p-4 rounded-xl border border-zinc-200">
+        <h4 className="text-lg font-bold text-zinc-800 dark:text-zinc-100">Choose Products to Add</h4>
+        <div className="flex gap-4 items-end bg-zinc-50 dark:bg-zinc-800/80 p-4 rounded-xl border border-zinc-200 dark:border-border-ui">
           <div className="flex-1">
             <Select
               label="Search & Select Product"
@@ -601,45 +627,45 @@ export default function OrderListPage() {
 
       <div className="space-y-4 text-left">
         <div className="flex items-center justify-between">
-          <h4 className="text-base font-bold text-zinc-800">
+          <h4 className="text-base font-bold text-zinc-800 dark:text-zinc-100">
             Selected Products
           </h4>
         </div>
 
-        <div className="border border-zinc-200 overflow-hidden rounded-xl shadow-sm">
+        <div className="border border-zinc-200 dark:border-border-ui overflow-hidden rounded-xl shadow-sm">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-zinc-100/80 border-b border-zinc-200">
-                <th className="p-3 text-xs font-semibold text-zinc-700 uppercase tracking-wide text-left">
+              <tr className="bg-zinc-100/80 dark:bg-zinc-800/80 border-b border-zinc-200 dark:border-border-ui">
+                <th className="p-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide text-left">
                   Product Name
                 </th>
-                <th className="p-3 text-xs font-semibold text-zinc-700 uppercase tracking-wide text-left">
+                <th className="p-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide text-left">
                   Amount
                 </th>
-                <th className="p-3 text-xs font-semibold text-zinc-700 uppercase tracking-wide text-left">
+                <th className="p-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide text-left">
                   Quantity
                 </th>
-                <th className="p-3 text-xs font-semibold text-zinc-700 uppercase tracking-wide text-left">
+                <th className="p-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide text-left">
                   Subtotal
                 </th>
-                <th className="p-3 text-xs font-semibold text-zinc-700 uppercase tracking-wide text-center">
+                <th className="p-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide text-center">
                   Action
                 </th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-zinc-200">
+            <tbody className="divide-y divide-zinc-200 dark:divide-border-ui">
               {modalSelectedProducts.length > 0 ? (
                 modalSelectedProducts.map((row) => (
                   <tr
                     key={row.id}
-                    className="hover:bg-zinc-50/80 transition-colors"
+                    className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/80 transition-colors"
                   >
-                    <td className="p-3 font-medium text-zinc-800 text-sm">
+                    <td className="p-3 font-medium text-zinc-800 dark:text-zinc-100 text-sm">
                       {row.name}
                     </td>
 
-                    <td className="p-3 font-medium text-zinc-700 text-sm">
+                    <td className="p-3 font-medium text-zinc-700 dark:text-zinc-300 text-sm">
                       ₹{row.amount}
                     </td>
 
@@ -651,11 +677,11 @@ export default function OrderListPage() {
                         onChange={(e) =>
                           handleQtyChange(row.id, Number(e.target.value))
                         }
-                        className="w-20 px-2 py-1 text-sm font-medium bg-white border border-zinc-200 rounded-lg focus:ring-1 focus:ring-primary-teal/20 focus:border-primary-teal outline-none text-center shadow-sm"
+                        className="w-20 px-2 py-1 text-sm font-medium text-zinc-800 dark:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-border-ui rounded-lg focus:ring-1 focus:ring-primary-teal/20 focus:border-primary-teal outline-none text-center shadow-sm"
                       />
                     </td>
 
-                    <td className="p-3 font-bold text-zinc-900 text-sm">
+                    <td className="p-3 font-bold text-zinc-900 dark:text-zinc-100 text-sm">
                       ₹{row.amount * row.quantity}
                     </td>
 
@@ -730,10 +756,7 @@ export default function OrderListPage() {
               disabled={!isAdmin}
               options={[
                 { value: "all", label: "Select Assign" },
-                ...(isAdmin
-                  ? users
-                  : users.filter(u => u._id === currentUser?._id || u.id === currentUser?._id)
-                ).map(u => ({ value: u._id || u.id, label: u.name }))
+                ...users.map(u => ({ value: u._id || u.id, label: u.name }))
               ]}
             />
           </div>

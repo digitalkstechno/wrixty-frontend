@@ -109,3 +109,8 @@ export const exportLeads = async (params?: FetchParams): Promise<Blob> => {
   return jsonToCsvBlob(formattedData);
 };
 
+// PUT /api/leads/bulk-reassign
+export const reassignLeadsApi = async (payload: { fromUserId: string, toUserIds: string[] }): Promise<any> => {
+  const { data } = await apiPut(endPointApi.leads, 'bulk-reassign', payload);
+  return data;
+};

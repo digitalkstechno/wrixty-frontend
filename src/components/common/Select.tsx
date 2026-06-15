@@ -89,10 +89,16 @@ export const Select: React.FC<SelectProps> = ({
     );
   }, [options, searchQuery]);
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   // Handle click outside to close dropdown and check position
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current && 
+        !containerRef.current.contains(event.target as Node) &&
+        (!dropdownRef.current || !dropdownRef.current.contains(event.target as Node))
+      ) {
         setIsOpen(false);
       }
     };
@@ -174,7 +180,8 @@ export const Select: React.FC<SelectProps> = ({
 
   const dropdownMenu = isOpen && (
     <div 
-      className={`absolute z-[99999] w-full bg-white border border-border-ui rounded-lg shadow-xl overflow-hidden animate-in fade-in duration-200 ${!menuPortalTarget ? (openUpwards ? "bottom-full mb-1.5 slide-in-from-bottom-2" : "top-full mt-1.5 slide-in-from-top-2") : ""}`}
+      ref={dropdownRef}
+      className={`absolute z-[99999] w-full bg-card-bg border border-border-ui rounded-lg shadow-xl overflow-hidden ${!menuPortalTarget ? (openUpwards ? "bottom-full mb-1.5" : "top-full mt-1.5") : ""}`}
       style={
         menuPortalTarget && dropdownRect
           ? {
@@ -190,14 +197,14 @@ export const Select: React.FC<SelectProps> = ({
     >
       {/* Search Input */}
       <div className="p-2 border-b border-border-ui/50 flex items-center gap-2 bg-zinc-50/50">
-        <Search className="text-text-secondary w-4 h-4" />
+        <Search className="text-text-secondary w-4 h-4 shrink-0" />
         <input
           ref={searchInputRef}
           type="text"
           placeholder="Search..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-transparent border-none outline-none text-xs text-text-primary placeholder:text-text-secondary/50 py-1"
+          className="w-full min-w-0 bg-transparent border-none outline-none text-xs text-text-primary placeholder:text-text-secondary/50 py-1"
           onClick={(e) => e.stopPropagation()}
         />
         {searchQuery && (
@@ -231,8 +238,8 @@ export const Select: React.FC<SelectProps> = ({
                 `}
               >
                 {multiple && (
-                  <div className={`w-3.5 h-3.5 border rounded flex items-center justify-center ${isSelected ? 'bg-primary-teal border-primary-teal text-white' : 'border-border-ui bg-white'}`}>
-                    {isSelected && <svg viewBox="0 0 14 14" fill="none" className="w-2.5 h-2.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5" /></svg>}
+                  <div className={`w-3.5 h-3.5 border rounded flex items-center justify-center ${isSelected ? 'bg-primary-teal border-primary-teal text-white' : 'border-border-ui bg-card-bg'}`}>
+                    {isSelected && <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                   </div>
                 )}
                 {opt.label}
@@ -272,7 +279,7 @@ export const Select: React.FC<SelectProps> = ({
           onClick={toggleDropdown}
           disabled={isDisabled}
           className={`
-            w-full flex items-center justify-between px-4 py-2.5 text-sm bg-white
+            w-full flex items-center justify-between px-4 py-2.5 text-sm bg-card-bg
             border border-border-ui text-text-primary rounded-lg transition-all duration-200
             outline-none text-left
             ${isOpen ? "border-primary-teal ring-1 ring-primary-teal/30" : "hover:border-primary-teal/50"}
@@ -298,7 +305,7 @@ export const Select: React.FC<SelectProps> = ({
 
         {/* Dropdown Panel */}
         {menuPortalTarget && typeof document !== "undefined"
-          ? createPortal(dropdownMenu, document.body)
+          ? (dropdownRect ? createPortal(dropdownMenu, document.body) : null)
           : dropdownMenu}
       </div>
 

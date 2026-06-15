@@ -121,8 +121,8 @@ export default function TeamListPage() {
   const openEdit = (team: Team) => {
     setActiveTeam(team);
     setName(team.name);
-    setHead(team.head);
-    setMembers(team.member || []);
+    setHead(typeof team.head === 'object' && team.head ? (team.head as any)._id || (team.head as any).id : team.head);
+    setMembers((team.member || []).map(m => typeof m === 'object' && m ? ((m as any)._id || (m as any).id) : m));
     setFormErrors({});
     setEditOpen(true);
   };
@@ -174,7 +174,7 @@ export default function TeamListPage() {
   const columns: Column<Team>[] = [
     { key: "_id", header: "No", render: (_, __, i) => (page - 1) * limit + i + 1, sortable: false },
     { key: "name", header: "Team Name" },
-    { key: "head", header: "Team Head" },
+    { key: "head", header: "Team Head", render: (val) => typeof val === 'object' && val ? val.name : val },
     { key: "member", header: "Members Count", render: (val) => (val || []).length },
     {
       key: "actions",
@@ -216,7 +216,7 @@ export default function TeamListPage() {
         </p>
       </div>
 
-      <div className="bg-white p-6 border border-border-ui rounded-lg shadow-sm space-y-6">
+      <div className="bg-card-bg p-6 border border-border-ui rounded-lg shadow-sm space-y-6">
         {/* Header Block */}
         <div className="flex items-center justify-between border-b border-border-ui pb-4">
           <div className="flex items-center gap-2">
@@ -269,7 +269,7 @@ export default function TeamListPage() {
             label="Select Team Head (Managers/Admins)"
             value={head}
             onChange={(e) => setHead(e.target.value)}
-            options={managerUsers.map(u => ({ value: u.name, label: `${u.name} (${(u.roles || []).join(", ")})` }))}
+            options={managerUsers.map(u => ({ value: u._id || u.id || "", label: `${u.name} (${(u.roles || []).join(", ")})` }))}
             placeholder="Select manager as head"
           />
           {formErrors.head && <p className="text-rose-500 text-[11px]">{formErrors.head}</p>}
@@ -277,20 +277,22 @@ export default function TeamListPage() {
             <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Select Team Members (Agents/Staff)</span>
             <div className="grid grid-cols-2 gap-2 bg-zinc-50 border border-zinc-200 p-3 rounded-lg max-h-48 overflow-y-auto scrollbar-thin">
               {staffUsers.length > 0 ? (
-                staffUsers.map(u => (
-                  <label key={u._id} className="flex items-center gap-2 text-xs font-medium cursor-pointer text-text-primary">
+                staffUsers.map(u => {
+                  const uid = u._id || u.id || "";
+                  return (
+                  <label key={uid} className="flex items-center gap-2 text-xs font-medium cursor-pointer text-text-primary">
                     <input
                       type="checkbox"
-                      checked={members.includes(u.name)}
+                      checked={members.includes(uid)}
                       onChange={(e) => {
-                        if (e.target.checked) setMembers([...members, u.name]);
-                        else setMembers(members.filter(m => m !== u.name));
+                        if (e.target.checked) setMembers([...members, uid]);
+                        else setMembers(members.filter(m => m !== uid));
                       }}
                       className="w-4 h-4 text-primary-teal border-zinc-300 rounded focus:ring-primary-teal cursor-pointer"
                     />
                     {u.name}
                   </label>
-                ))
+                )})
               ) : (
                 <span className="text-xs text-text-secondary italic col-span-2 text-center py-4">No staff or agents found</span>
               )}
@@ -314,27 +316,29 @@ export default function TeamListPage() {
             label="Select Team Head (Managers/Admins)"
             value={head}
             onChange={(e) => setHead(e.target.value)}
-            options={managerUsers.map(u => ({ value: u.name, label: `${u.name} (${(u.roles || []).join(", ")})` }))}
+            options={managerUsers.map(u => ({ value: u._id || u.id || "", label: `${u.name} (${(u.roles || []).join(", ")})` }))}
           />
           {formErrors.head && <p className="text-rose-500 text-[11px]">{formErrors.head}</p>}
           <div className="space-y-2">
             <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Select Team Members (Agents/Staff)</span>
             <div className="grid grid-cols-2 gap-2 bg-zinc-50 border border-zinc-200 p-3 rounded-lg max-h-48 overflow-y-auto scrollbar-thin">
               {staffUsers.length > 0 ? (
-                staffUsers.map(u => (
-                  <label key={u._id} className="flex items-center gap-2 text-xs font-medium cursor-pointer text-text-primary">
+                staffUsers.map(u => {
+                  const uid = u._id || u.id || "";
+                  return (
+                  <label key={uid} className="flex items-center gap-2 text-xs font-medium cursor-pointer text-text-primary">
                     <input
                       type="checkbox"
-                      checked={members.includes(u.name)}
+                      checked={members.includes(uid)}
                       onChange={(e) => {
-                        if (e.target.checked) setMembers([...members, u.name]);
-                        else setMembers(members.filter(m => m !== u.name));
+                        if (e.target.checked) setMembers([...members, uid]);
+                        else setMembers(members.filter(m => m !== uid));
                       }}
                       className="w-4 h-4 text-primary-teal border-zinc-300 rounded focus:ring-primary-teal cursor-pointer"
                     />
                     {u.name}
                   </label>
-                ))
+                )})
               ) : (
                 <span className="text-xs text-text-secondary italic col-span-2 text-center py-4">No staff or agents found</span>
               )}

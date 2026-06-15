@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { isAuthenticated as checkIsAuthenticated, getAuthenticatedUser, clearAuthData } from "../../utils/authUtils";
 import { useSettings } from "../../context/SettingsContext";
+import { ThemePicker } from "./ThemePicker";
 
 import { ToastProvider } from "../../context/ToastContext";
 import {
@@ -393,8 +394,10 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
             </div>
 
             {/* Exact Right Header User Info display matching screenshot */}
-            <div className="flex items-center gap-5 relative" ref={profileDropdownRef}>
-              <div
+            <div className="flex items-center gap-5 relative">
+              <ThemePicker />
+              <div className="flex items-center gap-5 relative" ref={profileDropdownRef}>
+                <div
                 className="flex items-center gap-3 p-1 group cursor-pointer"
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
               >
@@ -433,6 +436,7 @@ export const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ childre
                   </button>
                 </div>
               )}
+            </div>
             </div>
           </header>
 

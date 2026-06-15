@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Table, Column } from "../../components/common/Table";
-import { FiEdit, FiTrash2, FiUserCheck } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiUserCheck, FiBriefcase } from "react-icons/fi";
 import { Modal } from "../../components/common/Modal";
 import { Input } from "../../components/common/Input";
 import { Select } from "../../components/common/Select";
@@ -21,6 +21,7 @@ import {
 import { fetchRoles, Role as BackendRole } from "../../services/roleService";
 import { usePermission } from "../../utils/permissionUtils";
 import { setAuthData } from "../../utils/authUtils";
+import { ReassignLeadsModal } from "../../components/users/ReassignLeadsModal";
 
 export default function UsersPage() {
   const router = useRouter();
@@ -44,6 +45,9 @@ export default function UsersPage() {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [deletePhotoOpen, setDeletePhotoOpen] = useState(false);
   const [userToDeletePhoto, setUserToDeletePhoto] = useState<User | null>(null);
+
+  const [reassignOpen, setReassignOpen] = useState(false);
+  const [userToReassign, setUserToReassign] = useState<User | null>(null);
 
   // Form Fields
   const [name, setName] = useState("");
@@ -305,6 +309,15 @@ export default function UsersPage() {
     { key: "email", header: "Email" },
     { key: "company_number", header: "Company No" },
     { key: "roles", header: "Role", render: (val) => (val || []).join(", ") },
+    { 
+      key: "activeLeadCount", 
+      header: "Active Leads", 
+      render: (val) => (
+        <span className="font-bold text-primary-teal bg-primary-teal/10 px-2 py-0.5 rounded-md">
+          {val || 0}
+        </span>
+      ) 
+    },
     {
       key: "check_photo",
       header: "Check Photo",
@@ -340,6 +353,18 @@ export default function UsersPage() {
       sortable: false,
       render: (_, row) => (
         <div className="flex items-center gap-1.5">
+          {hasPermission("User-edit") && (
+            <button
+              onClick={() => {
+                setUserToReassign(row);
+                setReassignOpen(true);
+              }}
+              className="p-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all shadow-sm"
+              title="Transfer Leads"
+            >
+              <FiBriefcase className="w-3.5 h-3.5" />
+            </button>
+          )}
           {hasPermission("User-edit") && (
             <button
               onClick={() => openEdit(row)}
@@ -648,6 +673,19 @@ export default function UsersPage() {
           </div>
         </div>
       </Modal>
+
+      <ReassignLeadsModal
+        isOpen={reassignOpen}
+        onClose={() => {
+          setReassignOpen(false);
+          setUserToReassign(null);
+        }}
+        fromUser={userToReassign}
+        users={users}
+        onSuccess={() => {
+          loadUsers();
+        }}
+      />
     </div>
   );
 }

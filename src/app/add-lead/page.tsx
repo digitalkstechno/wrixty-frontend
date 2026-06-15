@@ -57,7 +57,10 @@ export default function AddLeadPage() {
         setProducts(prodsRes.data);
         setStatusesOptions(statusRes.data);
         setReasonCallOptions(reasonRes.data);
-        if (couriersRes?.data) setCouriers(couriersRes.data);
+        if (couriersRes?.data) {
+          setCouriers(couriersRes.data);
+          if (couriersRes.data.length > 0) setSelectedCourier(couriersRes.data[0].name);
+        }
         if (loggedInUser && !isUserAdmin) {
           setAssignee(loggedInUser._id || loggedInUser.id || "");
         } else if (usersRes.data.length > 0) {
@@ -95,9 +98,66 @@ export default function AddLeadPage() {
   const [modalSelectedProducts, setModalSelectedProducts] = useState<SelectedProductRow[]>([]);
   const [currentSelectedProductId, setCurrentSelectedProductId] = useState("");
 
+  const [isRepeatMode, setIsRepeatMode] = useState(false);
+
+  // Auto-fill logic when phone number reaches 10 digits
+  React.useEffect(() => {
+    if (phone && phone.length === 10) {
+      const checkPreviousLead = async () => {
+        try {
+          const { fetchLatestLeadByPhone } = await import("../../services/leadService");
+          const prevLead = await fetchLatestLeadByPhone(phone);
+          if (prevLead) {
+            setName(prevLead.name || "");
+            setStatus((prevLead.status as any)?._id || prevLead.status || "");
+            setStatusTwo((prevLead.reason_call as any)?._id || prevLead.reason_call || "");
+            setNoteText(prevLead.note || "");
+
+            // Assign Staff logic
+            if (isAdmin) {
+              setAssignee((prevLead.assgin as any)?._id || prevLead.assgin || "");
+            } else {
+              setAssignee(currentUser?._id || currentUser?.id || "");
+            }
+            setOrderStatus(Boolean(prevLead.orderStatus));
+
+            if (prevLead.products && prevLead.products.length > 0) {
+              setModalSelectedProducts(prevLead.products.map((p: any) => ({
+                productId: p.productId?._id || p.productId,
+                name: p.productId?.name || p.name || "",
+                amount: p.amount || 0,
+                quantity: p.quantity || 1,
+                subtotal: p.subtotal || 0
+              })));
+            } else {
+              setModalSelectedProducts([]);
+            }
+            setIsRepeatMode(true);
+            toast.success("Previous lead found. Form auto-filled and set to repeat mode.");
+          } else {
+            // Reset fields for new lead
+            setIsRepeatMode(false);
+            if (statusesOptions.length > 0) setStatus(statusesOptions[0]._id || statusesOptions[0].id || "");
+            if (reasonCallOptions.length > 0) setStatusTwo(reasonCallOptions[0]._id || reasonCallOptions[0].id || "");
+            setNoteText("");
+            setOrderStatus(false);
+            setModalSelectedProducts([]);
+            if (!isAdmin && currentUser) {
+              setAssignee(currentUser?._id || currentUser?.id || "");
+            }
+          }
+        } catch (error) {
+          // If no previous lead is found, it throws 404 which is handled silently here
+          setIsRepeatMode(false);
+        }
+      };
+      checkPreviousLead();
+    }
+  }, [phone, isAdmin, currentUser, statusesOptions, reasonCallOptions, toast]);
+
   // Convert to Order fields
   const [paymentType, setPaymentType] = useState<"COD" | "Prepaid">("COD");
-  const [selectedCourier, setSelectedCourier] = useState("Delhivery");
+  const [selectedCourier, setSelectedCourier] = useState("");
   const [transactionId, setTransactionId] = useState("");
 
   const handleAddProduct = () => {
@@ -207,7 +267,7 @@ export default function AddLeadPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="bg-white  p-6 border border-zinc-200  rounded-lg shadow-sm space-y-6">
+      <div className="bg-card-bg p-6 border border-border-ui rounded-lg shadow-sm space-y-6">
         
         {/* Header */}
         <div className="flex items-center gap-4 border-b border-zinc-100  pb-4">
@@ -228,7 +288,7 @@ export default function AddLeadPage() {
         <form onSubmit={handleAddSubmit} className="space-y-6 text-left">
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Enter Name" />
+            <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter Name" />
             <Input
               label="Phone Number"
               type="text"
@@ -265,10 +325,7 @@ export default function AddLeadPage() {
               onChange={(e) => setAssignee(e.target.value)}
               options={[
                 { value: "", label: "Select User" },
-                ...(isAdmin
-                  ? users
-                  : users.filter(u => u._id === currentUser?._id || u.id === currentUser?._id || u._id === currentUser?.id)
-                ).map(u => ({ value: u._id || u.id, label: u.name }))
+                ...users.map(u => ({ value: u._id || u.id, label: u.name }))
               ]}
             />
             <Input label="Note" value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Enter Note" />
@@ -300,7 +357,7 @@ export default function AddLeadPage() {
                 ]}
               />
               <Select
-                label="Courier Partner"
+                label="Courier Partner *"
                 value={selectedCourier}
                 onChange={(e) => setSelectedCourier(e.target.value)}
                 options={couriers.map(c => ({ value: c.name, label: c.name }))}

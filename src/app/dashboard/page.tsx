@@ -82,32 +82,32 @@ export default function DashboardPage() {
       {/* 6 Top Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Total Leads */}
-        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+        <div className="bg-card-bg p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
           <h3 className="text-2xl font-bold text-[#3478e5]">{metrics.totalLeads || 0}</h3>
           <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Total Leads</p>
         </div>
         {/* Converted to Orders */}
-        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+        <div className="bg-card-bg p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
           <h3 className="text-2xl font-bold text-text-primary">{totalConvertedToOrders}</h3>
           <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Converted to Orders</p>
         </div>
         {/* Total Sell */}
-        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+        <div className="bg-card-bg p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
           <h3 className="text-2xl font-bold text-primary-teal">₹ {(metrics.totalSell || 0).toLocaleString('en-IN')}</h3>
           <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Total Sell</p>
         </div>
         {/* Total Return Order (Amount) */}
-        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+        <div className="bg-card-bg p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
           <h3 className="text-2xl font-bold text-primary-teal">₹ {(metrics.totalReturnAmount || 0).toLocaleString('en-IN')}</h3>
           <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Total Return Order</p>
         </div>
         {/* Net Rate Amount */}
-        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+        <div className="bg-card-bg p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
           <h3 className="text-2xl font-bold text-primary-teal">₹ {(metrics.netRateAmount || 0).toLocaleString('en-IN')}</h3>
           <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Net Rate Amount</p>
         </div>
         {/* Total Return Order (Count) */}
-        <div className="bg-white p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
+        <div className="bg-card-bg p-4 border border-border-ui rounded-lg text-center shadow-soft flex flex-col justify-center h-24">
           <h3 className="text-2xl font-bold text-error">{totalReturnOrderQty}</h3>
           <p className="text-xs text-text-secondary font-medium uppercase tracking-wider mt-1">Total Return Order</p>
         </div>
@@ -117,7 +117,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Left Side: Repart Order Product */}
-        <div className="bg-white border border-border-ui rounded-lg shadow-soft p-4">
+        <div className="bg-card-bg border border-border-ui rounded-lg shadow-soft p-4">
           <h4 className="text-lg font-bold text-[#1f2f3e] mb-4">Repart Order Product</h4>
           {loading ? (
             <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-primary-teal border-t-transparent rounded-full animate-spin"></div></div>
@@ -127,7 +127,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Side: Staff Vise Order Products */}
-        <div className="bg-white border border-border-ui rounded-lg shadow-soft p-4">
+        <div className="bg-card-bg border border-border-ui rounded-lg shadow-soft p-4">
           <h4 className="text-lg font-bold text-[#1f2f3e] mb-4">Staff Vise Order Products</h4>
           {loading ? (
             <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-primary-teal border-t-transparent rounded-full animate-spin"></div></div>

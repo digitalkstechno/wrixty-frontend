@@ -179,7 +179,7 @@ export default function ReasonToCallPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 border border-zinc-200 rounded-md shadow-sm space-y-6">
+      <div className="bg-card-bg p-6 border border-border-ui rounded-md shadow-sm space-y-6">
 
         {/* Header Block */}
         <div className="border-b border-zinc-100 pb-4 space-y-3">

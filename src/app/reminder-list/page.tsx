@@ -40,6 +40,7 @@ export default function ReminderListPage() {
   const [isFetchingData, setIsFetchingData] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(true);
+  const [isManager, setIsManager] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -135,7 +136,11 @@ export default function ReminderListPage() {
       setCurrentUser(user);
       const admin = user?.roles?.some((r: string) => r.toLowerCase().includes('admin'));
       setIsAdmin(admin);
-      if (!admin) {
+      const manager = user?.roles?.some((r: string) => 
+        ['manager', 'main manager', 'maneger', 'main maneger'].includes(r.toLowerCase())
+      );
+      setIsManager(manager);
+      if (!admin && !manager) {
         initialAssigneeFilter = user._id || user.id;
       }
     }
@@ -207,7 +212,7 @@ export default function ReminderListPage() {
       <LeadFormModal
         isOpen={leadFormModalOpen}
         onClose={() => setLeadFormModalOpen(false)}
-        onSuccess={() => loadRemindersData(isAdmin ? undefined : (currentUser?._id || currentUser?.id))}
+        onSuccess={() => loadRemindersData((isAdmin || isManager) ? undefined : (currentUser?._id || currentUser?.id))}
         activeLead={activeLead}
         users={users}
         products={products}
@@ -237,7 +242,7 @@ export default function ReminderListPage() {
             onChange={(start, end) => {
               setStartDate(start);
               setEndDate(end);
-              loadRemindersData(isAdmin ? undefined : (currentUser?._id || currentUser?.id), undefined, { start, end });
+              loadRemindersData((isAdmin || isManager) ? undefined : (currentUser?._id || currentUser?.id), undefined, { start, end });
             }}
           />
         </div>
@@ -254,7 +259,7 @@ export default function ReminderListPage() {
             setSearchQuery(val);
             setCurrentPage(1);
             // Table already debounces 400ms, then calls this
-            loadRemindersData(isAdmin ? undefined : (currentUser?._id || currentUser?.id), val, undefined, 1, rowsPerPage);
+            loadRemindersData((isAdmin || isManager) ? undefined : (currentUser?._id || currentUser?.id), val, undefined, 1, rowsPerPage);
           }}
           serverSide={true}
           totalCount={totalRecords}
@@ -263,7 +268,7 @@ export default function ReminderListPage() {
           onPageChange={(page, limit) => {
             setCurrentPage(page);
             setRowsPerPage(limit);
-            loadRemindersData(isAdmin ? undefined : (currentUser?._id || currentUser?.id), undefined, undefined, page, limit);
+            loadRemindersData((isAdmin || isManager) ? undefined : (currentUser?._id || currentUser?.id), undefined, undefined, page, limit);
           }}
         />
       </div>

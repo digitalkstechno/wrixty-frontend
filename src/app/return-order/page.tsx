@@ -199,37 +199,63 @@ export default function ReturnOrderPage() {
 
   const [currentSelectedProductId, setCurrentSelectedProductId] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+  const [checkedProductIds, setCheckedProductIds] = useState<string[]>([]);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   useEffect(() => {
     if (addOpen && !activeOrder && phone && phone.length === 10) {
       const match = orders.find(o => o.phone_number === phone);
       if (match) {
-        setCustomer(match.name || "");
-        if (match.assginTo) {
-          setAssign(typeof match.assginTo === 'object' ? (match.assginTo._id || match.assginTo.id) : match.assginTo);
-        }
+        const fetchAndFill = async () => {
+          let returnedProductIds = new Set<string>();
+          try {
+            const res = await fetchReturnOrders({ search: phone, limit: 100 });
+            const existingReturns = res?.data?.data || res?.data || res || [];
+            existingReturns.forEach((r: any) => {
+              if (r.products && Array.isArray(r.products)) {
+                r.products.forEach((p: any) => returnedProductIds.add(p.productId?._id || p.productId || p._id || p.id));
+              }
+            });
+          } catch(e) { console.error(e); }
 
-        if (match.products && match.products.length > 0) {
-          setSelectedProducts(match.products.map((p: any) => ({
-            productId: p.productId?._id || p.productId || p._id || p.id,
-            name: p.name || p.productId?.name,
-            amount: p.amount || 0,
-            quantity: p.quantity || 1,
-            subtotal: p.subtotal || ((p.amount || 0) * (p.quantity || 1))
-          })));
-        } else if (match.product) {
-          // Fallback for old orders with string product
-          const prodNames = match.product.split(", ");
-          const matchedProds = products.filter(p => prodNames.includes(p.name));
-          setSelectedProducts(matchedProds.map(p => ({
-            productId: p._id || p.id,
-            name: p.name,
-            amount: p.amount || 0,
-            quantity: 1,
-            subtotal: p.amount || 0
-          })));
-        }
-        toast.success("Order details auto-filled.");
+          setCustomer(match.name || "");
+          if (match.assginTo) {
+            setAssign(typeof match.assginTo === 'object' ? (match.assginTo._id || match.assginTo.id) : match.assginTo);
+          }
+
+          if (match.products && match.products.length > 0) {
+            setSelectedProducts(match.products.map((p: any) => {
+              const pId = p.productId?._id || p.productId || p._id || p.id;
+              return {
+                productId: pId,
+                name: p.name || p.productId?.name,
+                amount: p.amount || 0,
+                quantity: p.quantity || 1,
+                subtotal: p.subtotal || ((p.amount || 0) * (p.quantity || 1)),
+                isReturned: returnedProductIds.has(pId)
+              };
+            }));
+            setCheckedProductIds([]);
+          } else if (match.product) {
+            // Fallback for old orders with string product
+            const prodNames = match.product.split(", ");
+            const matchedProds = products.filter(p => prodNames.includes(p.name));
+            setSelectedProducts(matchedProds.map(p => {
+              const pId = p._id || p.id;
+              return {
+                productId: pId,
+                name: p.name,
+                amount: p.amount || 0,
+                quantity: 1,
+                subtotal: p.amount || 0,
+                isReturned: returnedProductIds.has(pId)
+              };
+            }));
+            setCheckedProductIds([]);
+          }
+          toast.success("Order details auto-filled.");
+        };
+        fetchAndFill();
       }
     } else if (addOpen && !activeOrder && phone && phone.length < 10 && customer) {
       // Optionally clear if phone is deleted? 
@@ -246,6 +272,7 @@ export default function ReturnOrderPage() {
       setSelectedProducts(prev => prev.map(p => p.productId === currentSelectedProductId ? { ...p, quantity: p.quantity + 1, subtotal: (p.quantity + 1) * p.amount } : p));
     } else {
       setSelectedProducts(prev => [...prev, { productId: currentSelectedProductId, name: prod.name, amount: prod.amount, quantity: 1, subtotal: prod.amount }]);
+      setCheckedProductIds(prev => [...prev, currentSelectedProductId]);
     }
     setCurrentSelectedProductId("");
   };
@@ -256,19 +283,25 @@ export default function ReturnOrderPage() {
     setSelectedProducts(prev => prev.map(p => p.productId === id ? { ...p, quantity: safeQty, subtotal: safeQty * p.amount } : p));
   };
 
-  const convertTotalAmount = selectedProducts.reduce((sum, item) => sum + item.subtotal, 0);
+  const convertTotalAmount = selectedProducts
+    .filter(p => checkedProductIds.includes(p.productId))
+    .reduce((sum, item) => sum + item.subtotal, 0);
 
   const handleSubmitReturnOrder = async () => {
-    if (!customer || selectedProducts.length === 0) return toast.error("Please fill customer and add products");
+    if (checkedProductIds.length === 0) {
+      setShowErrorModal(true);
+      return;
+    }
     if (phone.length !== 10) return toast.error("Phone number must be exactly 10 digits!");
     try {
+      const productsToReturn = selectedProducts.filter(p => checkedProductIds.includes(p.productId));
       const payload = {
         customerName: customer,
         phone_number: phone,
         type: type || "RTO",
         assginTo: assign || undefined,
         amount: convertTotalAmount,
-        products: selectedProducts
+        products: productsToReturn
       };
 
       if (activeOrder) {
@@ -280,9 +313,12 @@ export default function ReturnOrderPage() {
       }
       setAddOpen(false);
       loadReturnOrdersData();
-      setCustomer(""); setPhone(""); setSelectedProducts([]);
+      setCustomer(""); setPhone(""); setSelectedProducts([]); setCheckedProductIds([]);
       setActiveOrder(null);
-    } catch (err: any) { toast.error(activeOrder ? "Failed to update return order" : "Failed to create return order"); }
+    } catch (err: any) { 
+      const errMsg = err.response?.data?.message || (activeOrder ? "Failed to update return order" : "Failed to create return order");
+      toast.error(errMsg); 
+    }
   };
 
   const handleDeleteClick = (order: ReturnOrder) => {
@@ -317,15 +353,18 @@ export default function ReturnOrderPage() {
       setAssign(payload.assginTo?._id || payload.assginTo?.id || payload.assginTo || "");
 
       if (payload.products && Array.isArray(payload.products)) {
-        setSelectedProducts(payload.products.map((p: any) => ({
+        const mappedProds = payload.products.map((p: any) => ({
           productId: p.productId?._id || p.productId || p._id || p.id,
           name: p.name || p.productId?.name,
           amount: p.amount,
           quantity: p.quantity,
           subtotal: p.subtotal || p.amount * p.quantity
-        })));
+        }));
+        setSelectedProducts(mappedProds);
+        setCheckedProductIds(mappedProds.map((p: any) => p.productId));
       } else {
         setSelectedProducts([]);
+        setCheckedProductIds([]);
       }
 
       setActiveOrder(order);
@@ -342,6 +381,7 @@ export default function ReturnOrderPage() {
     setType("RTO");
     setAssign("");
     setSelectedProducts([]);
+    setCheckedProductIds([]);
     setAddOpen(true);
   };
 
@@ -391,7 +431,7 @@ export default function ReturnOrderPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white  p-6   space-y-6">
+      <div className="bg-card-bg p-6   space-y-6">
 
         {/* Top Header Row with Dates and Add Button */}
         <div className="flex flex-wrap items-center justify-between border-b border-zinc-100  pb-4 gap-4">
@@ -516,28 +556,31 @@ export default function ReturnOrderPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-zinc-500">Customer Name</label>
-              <Select
-                options={[{ value: "", label: "Select Customer" }, ...Array.from(new Map(orders.map(o => [o.name, o])).values()).map((o: any) => ({ value: o.name, label: o.name }))]}
-                value={customer}
-                onChange={e => {
-                  setCustomer(e.target.value);
-                  const o = orders.find(ord => ord.name === e.target.value);
-                  if (o) setPhone(o.phone_number);
-                }}
+              <label className="text-[10px] font-bold text-zinc-500">Phone Number</label>
+              <Input 
+                placeholder="Enter Phone Number" 
+                value={phone} 
+                onChange={e => setPhone(e.target.value)} 
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-zinc-500">Phone Number</label>
-              <Input placeholder="Enter Phone Number" value={phone} onChange={e => setPhone(e.target.value)} />
+              <label className="text-[10px] font-bold text-zinc-500">Customer Name</label>
+              <Input 
+                placeholder="Customer Name" 
+                value={customer} 
+                onChange={e => setCustomer(e.target.value)} 
+              />
             </div>
-
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-zinc-500">Type</label>
-              <Select options={[{ value: "", label: "Select Type" }, { value: "RTO", label: "RTO" }]} value={type} onChange={e => setType(e.target.value)} />
+              <Select 
+                options={[{ value: "", label: "Select Type" }, { value: "RTO", label: "RTO" }]} 
+                value={type} 
+                onChange={e => setType(e.target.value)} 
+              />
             </div>
             <div className="space-y-1 md:col-span-1">
-              <label className="text-[10px] font-bold text-zinc-500">Assgin to</label>
+              <label className="text-[10px] font-bold text-zinc-500">Assign to</label>
               <Select
                 options={[{ value: "", label: "Select Assignee" }, ...users.map(u => ({ value: u._id || u.id, label: u.name }))]}
                 value={assign}
@@ -551,16 +594,35 @@ export default function ReturnOrderPage() {
             <div className="border border-zinc-200  rounded-lg overflow-hidden">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-white border-b border-zinc-200 text-zinc-600 uppercase">
+                  <tr className="bg-card-bg border-b border-border-ui text-text-secondary uppercase">
+                    <th className="p-3 font-semibold w-16">Select</th>
                     <th className="p-3 font-semibold">Product Name</th>
                     <th className="p-3 font-semibold">Amount</th>
                     <th className="p-3 font-semibold w-24">Quantity</th>
                     <th className="p-3 font-semibold">Subtotal</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white ">
+                <tbody className="bg-card-bg">
                   {selectedProducts.length > 0 ? selectedProducts.map(row => (
                     <tr key={row.productId} className="border-b border-zinc-100 ">
+                      <td className="p-3 text-center">
+                        {row.isReturned ? (
+                          <span className="text-[10px] text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">Returned</span>
+                        ) : (
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 cursor-pointer rounded border-zinc-300 text-teal-600 focus:ring-teal-600"
+                            checked={checkedProductIds.includes(row.productId)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCheckedProductIds(prev => [...prev, row.productId]);
+                              } else {
+                                setCheckedProductIds(prev => prev.filter(id => id !== row.productId));
+                              }
+                            }}
+                          />
+                        )}
+                      </td>
                       <td className="p-3">{row.name}</td>
                       <td className="p-3">{row.amount}</td>
                       <td className="p-3">{row.quantity}</td>
@@ -568,7 +630,7 @@ export default function ReturnOrderPage() {
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan={4} className="p-6 text-center text-zinc-500 font-medium">No products selected</td>
+                      <td colSpan={5} className="p-6 text-center text-zinc-500 font-medium">No products selected</td>
                     </tr>
                   )}
                 </tbody>
@@ -597,13 +659,13 @@ export default function ReturnOrderPage() {
           <div className="border border-zinc-200  rounded-lg overflow-hidden">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-zinc-200  text-zinc-600  bg-white ">
+                <tr className="border-b border-border-ui text-text-secondary bg-card-bg">
                   <th className="p-3 font-semibold">Product Name</th>
                   <th className="p-3 font-semibold">Qty</th>
                   <th className="p-3 font-semibold">Subtotal</th>
                 </tr>
               </thead>
-              <tbody className="bg-white ">
+              <tbody className="bg-card-bg">
                 <tr className="border-b border-zinc-100 ">
                   <td className="p-3 font-medium text-zinc-800 ">{activeOrder?.product}</td>
                   <td className="p-3 text-zinc-600 ">{activeOrder?.quantity}</td>
@@ -637,6 +699,19 @@ export default function ReturnOrderPage() {
         itemName={returnOrderToDelete?.customerName}
         itemType="return order"
       />
+
+      {/* Error Modal for no products selected */}
+      <Modal isOpen={showErrorModal} onClose={() => setShowErrorModal(false)} title="" sizeClass="max-w-sm">
+        <div className="p-6 text-center space-y-4">
+          <h2 className="text-3xl font-semibold text-zinc-700">Error!</h2>
+          <p className="text-zinc-600 text-lg">Please select at least one product..</p>
+          <div className="pt-6">
+            <Button variant="primary" className="bg-[#7066e0] hover:bg-[#5b52c0] focus:ring-[#7066e0] px-8 py-2 text-base rounded shadow-sm transition-colors" onClick={() => setShowErrorModal(false)}>
+              OK
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -16,6 +16,7 @@ export interface DeletedLead {
   status: string;
   reason_call: string;
   deleteDate: string;
+  deletedBy: string;
 }
 
 export default function RestoreDataPage() {
@@ -70,7 +71,8 @@ export default function RestoreDataPage() {
           date: formatDateTime(l.createdAt),
           status: l.status?.name || l.status || "Open",
           reason_call: l.reason_call?.name || l.reason_call || "",
-          deleteDate: formatDateTime(l.deleteDate || l.updatedAt)
+          deleteDate: formatDateTime(l.deleteDate || l.updatedAt),
+          deletedBy: l.deletedBy?.name || "-"
         };
       });
       setLeads(mapped);
@@ -95,7 +97,8 @@ export default function RestoreDataPage() {
     { key: "date", header: "Date" },
     { key: "status", header: "Status" },
     { key: "reason_call", header: "Reason Call", render: (val) => val || "-" },
-    { key: "deleteDate", header: "Delete Date" }
+    { key: "deleteDate", header: "Delete Date" },
+    { key: "deletedBy", header: "Deleted By", render: (val) => <span className="uppercase font-semibold text-primary-teal">{val}</span> }
   ];
 
   return (

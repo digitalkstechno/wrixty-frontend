@@ -63,8 +63,9 @@ export default function LeadListPage() {
   const [statuses, setStatuses] = useState<any[]>([]);
   const [couriers, setCouriers] = useState<any[]>([]);
   const [reasonsOptions, setReasonsOptions] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isManager, setIsManager] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [isAdmin, setIsAdmin] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -162,7 +163,11 @@ export default function LeadListPage() {
       setCurrentUser(user);
       const admin = user?.roles?.some((r: string) => r.toLowerCase().includes('admin'));
       setIsAdmin(admin);
-      if (!admin) {
+      const manager = user?.roles?.some((r: string) => 
+        ['manager', 'main manager', 'maneger', 'main maneger'].includes(r.toLowerCase())
+      );
+      setIsManager(manager);
+      if (!admin && !manager) {
         initialAssigneeFilter = user._id || user.id;
         setFilterAssignee([initialAssigneeFilter]);
       }
@@ -173,10 +178,12 @@ export default function LeadListPage() {
   }, []);
 
 
-  const updateLead = async (id: string, updated: Partial<Lead>) => {
+  const updateLead = async (id: string, updated: Partial<Lead> & { statusId?: string, reasonCallId?: string }) => {
     setLeads(prev => prev.map(l => {
       if (l.id === id) {
         const merged = { ...l, ...updated };
+        if (updated.status) (merged as any).statusId = updated.status;
+        if (updated.reason_call) (merged as any).reasonCallId = updated.reason_call;
         if (updated.amount !== undefined || updated.quantity !== undefined) {
           merged.subtotal = merged.amount * merged.quantity;
         }
@@ -624,13 +631,10 @@ export default function LeadListPage() {
               multiple={true}
               value={filterAssignee}
               onChange={(e) => setFilterAssignee(e.target.value as unknown as string[])}
-              disabled={!isAdmin}
+              disabled={!isAdmin && !isManager}
               options={[
                 { value: "all", label: "Select Assign" },
-                ...(isAdmin
-                  ? users
-                  : users.filter(u => u._id === currentUser?._id || u.id === currentUser?._id)
-                ).map(u => ({ value: u._id || u.id, label: u.name }))
+                ...users.map(u => ({ value: u._id || u.id, label: u.name }))
               ]}
             />
           </div>
